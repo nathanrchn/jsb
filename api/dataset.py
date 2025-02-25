@@ -1,4 +1,4 @@
-from json import loads
+from json import loads, dumps
 from dataclasses import dataclass
 from datasets import load_dataset
 from typing import Dict, Any, Callable
@@ -48,3 +48,6 @@ class Dataset:
     def __iter__(self):
         for item in self.dataset:
             yield item
+
+    def schema_to_prompt(self, schema: Dict[str, Any]) -> str:
+        return dumps(schema)

@@ -1,3 +1,4 @@
+from uuid import uuid4
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional
@@ -20,14 +21,14 @@ class EngineConfig:
 class GenerationResponse:
     input: str
     output: str
-    id: Optional[str] = None
-    json_schema: Optional[Dict[str, Any]] = None
     label: Optional[str] = None
+    json_schema: Optional[Dict[str, Any]] = None
+    id: str = field(default_factory=lambda: str(uuid4()))
     generated_tokens: List[Token] = field(default_factory=list)
     top_tokens: List[List[Token]] = field(default_factory=list)
-    metadata: GenerationMetadata = field(default_factory=GenerationMetadata)
     token_usage: TokenUsage = field(default_factory=TokenUsage)
     perf_metrics: PerfMetrics = field(default_factory=PerfMetrics)
+    metadata: GenerationMetadata = field(default_factory=GenerationMetadata)
     tokenization_analysis: TokenizationAnalysis = field(
         default_factory=TokenizationAnalysis
     )
@@ -42,7 +43,7 @@ class Engine(ABC):
     def generate(
         self,
         prompt: str,
-        schema: Optional[Dict[str, Any]] = None,
+        schema: Dict[str, Any],
     ) -> GenerationResponse:
         raise NotImplementedError
 
@@ -51,9 +52,7 @@ class Engine(ABC):
     def max_context_length(self) -> int:
         raise NotImplementedError
 
-    def adapt_schema(
-        self, schema: Optional[Dict[str, Any]]
-    ) -> Optional[Dict[str, Any]]:
+    def adapt_schema(self, schema: Dict[str, Any]) -> Dict[str, Any]:
         return schema
 
     def encode(self, text: str) -> Optional[List[int]]:

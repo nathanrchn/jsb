@@ -227,14 +227,14 @@ def safe_subtract(a: Optional[float], b: Optional[float]) -> Optional[float]:
 
 
 def profile_generation(
-    generate: Callable[[Engine, str, Optional[Dict[str, Any]]], GenerationResponse],
-) -> Callable[[Engine, str, Optional[Dict[str, Any]]], GenerationResponse]:
+    generate: Callable[[Engine, str, Dict[str, Any]], GenerationResponse],
+) -> Callable[[Engine, str, Dict[str, Any]], GenerationResponse]:
     @wraps(generate)
     def wrapper(
-        engine: Engine, prompt: str, generation_config: Optional[Dict[str, Any]] = None
+        engine: Engine, prompt: str, schema: Dict[str, Any]
     ) -> GenerationResponse:
         gen_start_time: float = time()
-        response: GenerationResponse = generate(engine, prompt, generation_config)
+        response: GenerationResponse = generate(engine, prompt, schema)
         gen_end_time: float = time()
 
         perf_metrics: PerfMetrics = PerfMetrics.from_timestamps(
