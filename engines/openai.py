@@ -31,11 +31,10 @@ class OpenAIConfig(EngineConfig):
     top_p: float
 
 
-class OpenAIEngine(Engine):
+class OpenAIEngine(Engine[OpenAIConfig]):
     def __init__(self, config: OpenAIConfig):
         super().__init__(config)
 
-        self.config = config
         self.client = OpenAI(api_key=self.config.api_key)
         self.tokenizer = encoding_for_model(self.config.model)
 

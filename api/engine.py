@@ -1,7 +1,7 @@
 from uuid import uuid4
-from typing import List, Optional
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from typing import List, Optional, TypeVar, Generic
 
 from utils import (
     TokenUsage,
@@ -12,9 +12,13 @@ from utils import (
 )
 from api.base import Schema
 
+
 @dataclass
 class EngineConfig:
     pass
+
+
+T = TypeVar("T", bound=EngineConfig)
 
 
 @dataclass
@@ -34,8 +38,8 @@ class GenerationResponse:
     )
 
 
-class Engine(ABC):
-    def __init__(self, config: EngineConfig):
+class Engine(ABC, Generic[T]):
+    def __init__(self, config: T):
         self.config = config
         self.total_usage = TokenUsage()
 
