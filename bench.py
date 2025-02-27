@@ -11,14 +11,16 @@ from core.evaluator import evaluate, aggregate_scores, print_scores
 
 def bench(
     engine: Engine, dataset: Dataset, prompt_fn: FormatPrompt = DEFAULT_FORMAT_PROMPT
-) -> List[GenerationResult]:
+) -> None:
     results = []
     for prompt, schema in dataset.iter(prompt_fn):
         schema = engine.adapt_schema(schema)
         result = engine.generate(prompt, schema)
         results.append(result)
 
-    return results
+    scores = evaluate(results)
+    aggregated_scores = aggregate_scores(scores)
+    print_scores(aggregated_scores)
 
 
 if __name__ == "__main__":
@@ -33,7 +35,4 @@ if __name__ == "__main__":
     )
     dataset = Dataset(DatasetConfig(args.task, limit=args.limit))
 
-    results = bench(engine, dataset)
-    scores = evaluate(results)
-    aggregated_scores = aggregate_scores(scores)
-    print_scores(aggregated_scores)
+    bench(engine, dataset)

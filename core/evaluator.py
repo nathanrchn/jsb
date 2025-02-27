@@ -1,6 +1,6 @@
 import json
 from enum import IntEnum
-from typing import List, Dict, Any
+from typing import List, Dict
 from fastjsonschema import compile
 from prettytable import PrettyTable
 
