@@ -56,7 +56,7 @@ def median(values: List[float]) -> float:
         return (sorted_values[n // 2 - 1] + sorted_values[n // 2]) / 2
     else:
         return sorted_values[n // 2]
-    
+
 
 def detect_none(value: Optional[float]) -> str:
     if value is None:
@@ -114,29 +114,38 @@ def evaluate(
         if result.perf_metrics.gct is not None
     ]
 
-    return declared_coverage / len(results), empirical_coverage / empirical_total, PerfMetrics(
-        ttft=median(ttft_list),
-        tpot=median(tpot_list),
-        tgt=median(tgt_list),
-        gct=median(gct_list),
+    return (
+        declared_coverage / len(results),
+        empirical_coverage / empirical_total,
+        PerfMetrics(
+            ttft=median(ttft_list),
+            tpot=median(tpot_list),
+            tgt=median(tgt_list),
+            gct=median(gct_list),
+        ),
     )
 
 
 def print_scores(
-    declared_coverage: List[float], empirical_coverage: List[float], perf_metrics: List[PerfMetrics], tasks: List[str]
+    declared_coverage: List[float],
+    empirical_coverage: List[float],
+    perf_metrics: List[PerfMetrics],
+    tasks: List[str],
 ) -> None:
     table = PrettyTable(
         [
             "Task",
             "Declared coverage",
             "Empirical coverage",
-            "Time to first token (ms)",
-            "Time per output token (ms)",
-            "Grammar compilation time (s)",
-            "Generation time (s)",
+            "TTFT (s)",
+            "TPOT (ms)",
+            "TGT (s)",
+            "GCT (s)",
         ]
     )
-    for task, dc, ec, pm in zip(tasks, declared_coverage, empirical_coverage, perf_metrics):
+    for task, dc, ec, pm in zip(
+        tasks, declared_coverage, empirical_coverage, perf_metrics
+    ):
         table.add_row(
             [
                 task,
@@ -149,6 +158,3 @@ def print_scores(
             ]
         )
     print(table)
-
-
-# print coverage and errors
