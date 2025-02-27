@@ -85,6 +85,9 @@ class TokenUsage:
             ff_output_tokens=self.ff_output_tokens + other.ff_output_tokens,
         )
 
+    def __repr__(self) -> str:
+        return f"token usage: {self.input_tokens:,} input, {self.output_tokens:,} output."
+
 
 @dataclass
 class TokenDiff:

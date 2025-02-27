@@ -36,6 +36,7 @@ def bench(
         perf_metrics.append(pm)
 
     print_scores(declared_coverage, empirical_coverage, perf_metrics, tasks)
+    print(engine.total_usage)
 
 
 if __name__ == "__main__":
