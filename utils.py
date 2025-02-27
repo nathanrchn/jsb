@@ -1,4 +1,3 @@
-import math
 from time import time
 from enum import Enum
 from functools import wraps
@@ -123,18 +122,6 @@ class GenerationMetadata:
     compile_status: Optional[CompileStatus] = field(default_factory=CompileStatus)
     decoding_status: Optional[DecodingStatus] = field(default_factory=DecodingStatus)
 
-    def is_valid_so_far(self):
-        compile_ok = self.compile_status.code in [
-            CompileStatusCode.OK,
-            CompileStatusCode.TBD,
-        ]
-        decode_ok = self.decoding_status.code in [
-            DecodingStatusCode.OK,
-            DecodingStatusCode.TBD,
-        ]
-
-        return compile_ok and decode_ok
-
 
 @dataclass
 class PerfMetrics:
@@ -171,25 +158,10 @@ class PerfMetrics:
         )
 
 
-class Stat(Enum):
-    MEAN = "mean"
-    STD = "std"
-    MIN = "min"
-    MAX = "max"
-    COUNT = "count"
-    P25 = "25%"
-    P50 = "50%"
-    P75 = "75%"
-
-
+@dataclass
 class Conversation:
-    def __init__(
-        self,
-        system_message: Optional[Dict[str, str]] = None,
-        user_messages: Optional[List[Dict[str, str]]] = None,
-    ):
-        self.system_message = system_message
-        self.user_messages = user_messages or []
+    system_message: Optional[Dict[str, str]] = None
+    user_messages: Optional[List[Dict[str, str]]] = []
 
     def to_messages(self) -> List[Dict[str, str]]:
         messages = []
@@ -198,35 +170,6 @@ class Conversation:
         if self.user_messages:
             messages.extend(self.user_messages)
         return messages
-
-    def to_texts(self) -> List[str]:
-        return [msg["content"] for msg in self.to_messages()]
-
-
-def round_dict(data, sig_figs=3):
-    if isinstance(data, dict):
-        # If data is a dictionary, apply rounding to each value
-        return {key: round_dict(value, sig_figs) for key, value in data.items()}
-    elif isinstance(data, list):
-        # If data is a list, apply rounding to each item
-        return [round_dict(item, sig_figs) for item in data]
-    elif isinstance(data, float):
-        # If data is a float, round it
-        return round_to_sig_figs(data, sig_figs)
-    else:
-        # For other data types, return as is
-        return data
-
-
-def round_to_sig_figs(number, sig_figs):
-    """Round a number to a specified number of significant figures."""
-    # Handle special cases
-    if math.isnan(number):
-        return number
-    if number == 0:
-        return 0
-
-    return round(number, sig_figs - int(math.floor(math.log10(abs(number)))) - 1)
 
 
 def safe_divide(a: Optional[float], b: Optional[float]) -> Optional[float]:
