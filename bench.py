@@ -1,4 +1,5 @@
 import os
+from tqdm import tqdm
 from argparse import ArgumentParser
 
 from api.engine import Engine
@@ -12,7 +13,9 @@ def bench(
     engine: Engine, dataset: Dataset, prompt_fn: FormatPrompt = DEFAULT_FORMAT_PROMPT
 ) -> None:
     results = []
-    for prompt, schema in dataset.iter(prompt_fn):
+    for prompt, schema in tqdm(
+        dataset.iter(prompt_fn), total=dataset.config.limit or len(dataset)
+    ):
         schema = engine.adapt_schema(schema)
         result = engine.generate(prompt, schema)
         results.append(result)
