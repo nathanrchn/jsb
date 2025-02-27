@@ -3,9 +3,10 @@ from time import time
 from enum import Enum
 from functools import wraps
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Any
+from typing import Callable, Dict, List, Optional, Any, TYPE_CHECKING
 
-from api.engine import Engine, GenerationResponse
+if TYPE_CHECKING:
+    from api.engine import Engine, GenerationResult
 
 COMPILATION_TIMEOUT = 40
 GENERATION_TIMEOUT = 60
@@ -68,6 +69,13 @@ class TokenUsage:
     input_tokens: int = 0
     output_tokens: int = 0
     ff_output_tokens: int = 0
+
+    def __add__(self, other: "TokenUsage") -> "TokenUsage":
+        return TokenUsage(
+            input_tokens=self.input_tokens + other.input_tokens,
+            output_tokens=self.output_tokens + other.output_tokens,
+            ff_output_tokens=self.ff_output_tokens + other.ff_output_tokens,
+        )
 
 
 @dataclass
@@ -227,25 +235,25 @@ def safe_subtract(a: Optional[float], b: Optional[float]) -> Optional[float]:
 
 
 def profile_generation(
-    generate: Callable[[Engine, str, Dict[str, Any]], GenerationResponse],
-) -> Callable[[Engine, str, Dict[str, Any]], GenerationResponse]:
+    generate: Callable[["Engine", str, Dict[str, Any]], "GenerationResult"],
+) -> Callable[["Engine", str, Dict[str, Any]], "GenerationResult"]:
     @wraps(generate)
     def wrapper(
-        engine: Engine, prompt: str, schema: Dict[str, Any]
-    ) -> GenerationResponse:
+        engine: "Engine", prompt: str, schema: Dict[str, Any]
+    ) -> "GenerationResult":
         gen_start_time: float = time()
-        response: GenerationResponse = generate(engine, prompt, schema)
+        result: "GenerationResult" = generate(engine, prompt, schema)
         gen_end_time: float = time()
 
         perf_metrics: PerfMetrics = PerfMetrics.from_timestamps(
             start_time=gen_start_time,
-            grammar_compilation_end_time=response.metadata._grammar_compilation_end_time,
-            first_token_arrival_time=response.metadata._first_tok_arr_time,
+            grammar_compilation_end_time=result.metadata._grammar_compilation_end_time,
+            first_token_arrival_time=result.metadata._first_tok_arr_time,
             end_time=gen_end_time,
-            num_output_tokens=response.token_usage.output_tokens,
+            num_output_tokens=result.token_usage.output_tokens,
         )
 
-        response.perf_metrics = perf_metrics
-        return response
+        result.perf_metrics = perf_metrics
+        return result
 
     return wrapper

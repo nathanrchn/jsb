@@ -1,9 +1,9 @@
 from time import time
 from dataclasses import dataclass
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from jsonschema import Draft202012Validator, SchemaError
 
-from api.engine import Engine, EngineConfig, GenerationResponse
+from api.engine import Engine, EngineConfig, GenerationResult
 from utils import (
     TokenUsage,
     Token,
@@ -26,9 +26,8 @@ except ImportError:
 class OpenAIConfig(EngineConfig):
     api_key: str
     model: str
-    temperature: float
-    max_tokens: int
-    top_p: float
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
 
 
 class OpenAIEngine(Engine[OpenAIConfig]):
@@ -38,7 +37,7 @@ class OpenAIEngine(Engine[OpenAIConfig]):
         self.client = OpenAI(api_key=self.config.api_key)
         self.tokenizer = encoding_for_model(self.config.model)
 
-    def generate(self, prompt: str, schema: Dict[str, Any]) -> GenerationResponse:
+    def _generate(self, prompt: str, schema: Dict[str, Any]) -> GenerationResult:
         response = self.client.chat.completions.create(
             model=self.config.model,
             messages=[{"role": "user", "content": prompt}],
@@ -49,6 +48,9 @@ class OpenAIEngine(Engine[OpenAIConfig]):
             stream=True,
             logprobs=True,
             top_logprobs=20,
+            temperature=self.config.temperature,
+            max_tokens=self.config.max_tokens,
+            stream_options={"include_usage": True},
         )
 
         tokens_str: List[str] = []
@@ -68,7 +70,10 @@ class OpenAIEngine(Engine[OpenAIConfig]):
 
             tokens_str.append(chunk_content)
 
-        usage: TokenUsage = self.get_token_usage(chunk)
+        usage: TokenUsage = TokenUsage(
+            input_tokens=chunk.usage.prompt_tokens,
+            output_tokens=chunk.usage.completion_tokens,
+        )
 
         metadata = GenerationMetadata(
             system_fingerprint=chunk.system_fingerprint,
@@ -79,7 +84,7 @@ class OpenAIEngine(Engine[OpenAIConfig]):
 
         tokens_ids = [self.convert_token_to_id(token) for token in tokens_str]
 
-        response = GenerationResponse(
+        result = GenerationResult(
             input=prompt,
             output="".join(tokens_str),
             generated_tokens=[
@@ -92,7 +97,7 @@ class OpenAIEngine(Engine[OpenAIConfig]):
             token_usage=usage,
         )
 
-        return response
+        return result
 
     def adapt_schema(self, schema: Dict[str, Any]) -> Dict[str, Any]:
         recursively_set_additional_properties_false(schema)

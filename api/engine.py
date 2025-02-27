@@ -22,7 +22,7 @@ T = TypeVar("T", bound=EngineConfig)
 
 
 @dataclass
-class GenerationResponse:
+class GenerationResult:
     input: str
     output: str
     label: Optional[str] = None
@@ -43,12 +43,24 @@ class Engine(ABC, Generic[T]):
         self.config = config
         self.total_usage = TokenUsage()
 
-    @abstractmethod
     def generate(
         self,
         prompt: str,
         schema: Schema,
-    ) -> GenerationResponse:
+    ) -> GenerationResult:
+        schema = self.adapt_schema(schema)
+        result = self._generate(prompt, schema)
+
+        self.total_usage += result.token_usage
+        result.json_schema = schema
+        return result
+
+    @abstractmethod
+    def _generate(
+        self,
+        prompt: str,
+        schema: Schema,
+    ) -> GenerationResult:
         raise NotImplementedError
 
     @property
@@ -56,6 +68,7 @@ class Engine(ABC, Generic[T]):
     def max_context_length(self) -> int:
         raise NotImplementedError
 
+    @abstractmethod
     def adapt_schema(self, schema: Schema) -> Schema:
         return schema
 
