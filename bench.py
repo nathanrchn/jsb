@@ -1,9 +1,8 @@
 import os
-from typing import List
 from argparse import ArgumentParser
 
+from api.engine import Engine
 from api.dataset import Dataset, DatasetConfig
-from api.engine import Engine, GenerationResult
 from engines.openai import OpenAIConfig, OpenAIEngine
 from api.base import FormatPrompt, DEFAULT_FORMAT_PROMPT
 from core.evaluator import evaluate, aggregate_scores, print_scores
