@@ -58,15 +58,7 @@ class GenerationResult:
     output: str
     label: Optional[str] = None
     json_schema: Optional[Schema] = None
-    id: str = field(default_factory=lambda: str(uuid4()))
-    generated_tokens: List[Token] = field(default_factory=list)
-    top_tokens: List[List[Token]] = field(default_factory=list)
-    token_usage: TokenUsage = field(default_factory=TokenUsage)
-    perf_metrics: PerfMetrics = field(default_factory=PerfMetrics)
-    metadata: GenerationMetadata = field(default_factory=GenerationMetadata)
-    tokenization_analysis: TokenizationAnalysis = field(
-        default_factory=TokenizationAnalysis
-    )
+    ...
 ```
 
 Represents the result of a generation request.
@@ -90,17 +82,6 @@ Handles loading and managing benchmark datasets.
 - `map(map_fn: Callable[[Schema], Schema]) -> None`: Maps the schemas in the dataset
 - `shuffle() -> None`: Shuffles the dataset
 - `iter(prompt_fn: FormatPrompt) -> Iterator[Tuple[str, Schema]]`: Iterates through the dataset
-
-### `DatasetConfig` Class
-
-```python
-@dataclass
-class DatasetConfig:
-    dataset_name: str
-    limit: Optional[int] = None
-```
-
-Configuration for a dataset.
 
 ## Evaluation API
 
@@ -162,4 +143,4 @@ DEFAULT_FORMAT_PROMPT: FormatPrompt = (
 )
 ```
 
-The default prompt formatting function. 
+The default prompt formatting function.

@@ -75,14 +75,12 @@ When interpreting benchmark results, consider the following:
 ## Example Output
 
 ```
-+----------+-------------------+--------------------+----------+-----------+---------+---------+
-|   Task   | Declared coverage | Empirical coverage | TTFT (s) | TPOT (ms) | TGT (s) | GCT (s) |
-+----------+-------------------+--------------------+----------+-----------+---------+---------+
-|  simple  |       1.00        |        0.95        |   0.52   |   12.34   |   1.23  |   0.71  |
-|  medium  |       0.98        |        0.87        |   0.58   |   15.67   |   1.45  |   0.87  |
-|   hard   |       0.85        |        0.72        |   0.63   |   18.92   |   1.78  |   1.15  |
-| very_hard|       0.65        |        0.48        |   0.71   |   22.45   |   2.12  |   1.41  |
-+----------+-------------------+--------------------+----------+-----------+---------+---------+
++-----------------+-------------------+--------------------+----------+-----------+---------+---------+
+|       Task      | Declared coverage | Empirical coverage | TTFT (s) | TPOT (ms) | TGT (s) | GCT (s) |
++-----------------+-------------------+--------------------+----------+-----------+---------+---------+
+|   Github_easy   |       1.00        |        0.95        |   0.52   |   12.34   |   1.23  |   0.71  |
+|  Github_medium  |       0.98        |        0.87        |   0.58   |   15.67   |   1.45  |   0.87  |
++-----------------+-------------------+--------------------+----------+-----------+---------+---------+
 ```
 
 This table shows that the model performs well on simple schemas but struggles with more complex ones. The performance metrics also show that generation takes longer for more complex schemas. 
