@@ -9,6 +9,7 @@ from utils import (
     GenerationMetadata,
     PerfMetrics,
     TokenizationAnalysis,
+    profile_generation,
 )
 from api.base import Schema
 
@@ -43,6 +44,7 @@ class Engine(ABC, Generic[T]):
         self.config = config
         self.total_usage = TokenUsage()
 
+    @profile_generation
     def generate(
         self,
         prompt: str,

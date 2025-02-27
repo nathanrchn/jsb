@@ -109,8 +109,8 @@ class Token:
 @dataclass
 class GenerationMetadata:
     system_fingerprint: Optional[str] = None
-    _first_tok_arr_time: Optional[float] = None
-    _grammar_compilation_end_time: Optional[float] = None
+    first_token_arrival_time: Optional[float] = None
+    grammar_compilation_end_time: Optional[float] = None
     compile_status: Optional[CompileStatus] = field(default_factory=CompileStatus)
     decoding_status: Optional[DecodingStatus] = field(default_factory=DecodingStatus)
 
@@ -247,8 +247,8 @@ def profile_generation(
 
         perf_metrics: PerfMetrics = PerfMetrics.from_timestamps(
             start_time=gen_start_time,
-            grammar_compilation_end_time=result.metadata._grammar_compilation_end_time,
-            first_token_arrival_time=result.metadata._first_tok_arr_time,
+            grammar_compilation_end_time=result.metadata.grammar_compilation_end_time,
+            first_token_arrival_time=result.metadata.first_token_arrival_time,
             end_time=gen_end_time,
             num_output_tokens=result.token_usage.output_tokens,
         )

@@ -38,20 +38,32 @@ class OpenAIEngine(Engine[OpenAIConfig]):
         self.tokenizer = encoding_for_model(self.config.model)
 
     def _generate(self, prompt: str, schema: Dict[str, Any]) -> GenerationResult:
-        response = self.client.chat.completions.create(
-            model=self.config.model,
-            messages=[{"role": "user", "content": prompt}],
-            response_format={
-                "type": "json_schema",
-                "json_schema": {"schema": schema, "name": "json_schema"},
-            },
-            stream=True,
-            logprobs=True,
-            top_logprobs=20,
-            temperature=self.config.temperature,
-            max_tokens=self.config.max_tokens,
-            stream_options={"include_usage": True},
-        )
+        metadata = GenerationMetadata()
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.config.model,
+                messages=[{"role": "user", "content": prompt}],
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {"schema": schema, "name": "json_schema"},
+                },
+                stream=True,
+                logprobs=True,
+                top_logprobs=20,
+                temperature=self.config.temperature,
+                max_tokens=self.config.max_tokens,
+                stream_options={"include_usage": True},
+            )
+        except Exception as e:
+            metadata.compile_status = CompileStatus(
+                code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
+            )
+            return GenerationResult(
+                input=prompt,
+                output="",
+                metadata=metadata,
+            )
 
         tokens_str: List[str] = []
         logprobs: List[float] = []
@@ -75,12 +87,10 @@ class OpenAIEngine(Engine[OpenAIConfig]):
             output_tokens=chunk.usage.completion_tokens,
         )
 
-        metadata = GenerationMetadata(
-            system_fingerprint=chunk.system_fingerprint,
-            _first_tok_arr_time=first_token_arrival_time,
-            compile_status=CompileStatus(code=CompileStatusCode.OK),
-            decoding_status=DecodingStatus(code=DecodingStatusCode.OK),
-        )
+        metadata.system_fingerprint = chunk.system_fingerprint
+        metadata.first_token_arrival_time = first_token_arrival_time
+        metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
+        metadata.decoding_status = DecodingStatus(code=DecodingStatusCode.OK)
 
         tokens_ids = [self.convert_token_to_id(token) for token in tokens_str]
 
@@ -93,7 +103,6 @@ class OpenAIEngine(Engine[OpenAIConfig]):
             ],
             top_tokens=top_tokens,
             metadata=metadata,
-            perf_metrics=None,
             token_usage=usage,
         )
 
