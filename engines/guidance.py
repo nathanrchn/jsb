@@ -132,3 +132,7 @@ class GuidanceEngine(Engine[GuidanceConfig]):
 
     def decode(self, ids: List[int]) -> Optional[str]:
         return self.tokenizer.decode(ids).decode("utf-8")
+
+    @property
+    def max_context_length(self) -> int:
+        return self.model.n_ctx()
