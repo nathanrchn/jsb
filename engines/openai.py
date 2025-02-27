@@ -28,13 +28,14 @@ class OpenAIConfig(EngineConfig):
     model: str
     temperature: Optional[float] = None
     max_tokens: Optional[int] = None
+    base_url: Optional[str] = None
 
 
 class OpenAIEngine(Engine[OpenAIConfig]):
     def __init__(self, config: OpenAIConfig):
         super().__init__(config)
 
-        self.client = OpenAI(api_key=self.config.api_key)
+        self.client = OpenAI(api_key=self.config.api_key, base_url=self.config.base_url)
         self.tokenizer = encoding_for_model(self.config.model)
 
     def _generate(self, prompt: str, schema: Dict[str, Any]) -> GenerationResult:
