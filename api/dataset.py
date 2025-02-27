@@ -40,7 +40,7 @@ class Dataset:
     def shuffle(self) -> None:
         self.dataset = self.dataset.shuffle()
 
-    def iter(self, prompt_fn: FormatPrompt) -> Iterator[Tuple[str, Schema]]:
+    def iter(self, prompt_fn: FormatPrompt = DEFAULT_FORMAT_PROMPT) -> Iterator[Tuple[str, Schema]]:
         for item in self.dataset:
             schema = loads(item[DATASET_SCHEMA_COLUMN])
             yield prompt_fn(schema), schema
