@@ -22,7 +22,7 @@ def bench(
         task_results = []
         dataset = Dataset(DatasetConfig(task, limit=limit))
         for prompt, schema in tqdm(
-            dataset.iter(prompt_fn), total=limit or len(dataset)
+            dataset.iter(prompt_fn), total=limit or len(dataset), desc=task
         ):
             schema = engine.adapt_schema(schema)
             result = engine.generate(prompt, schema)

@@ -1,8 +1,8 @@
 import json
 from enum import IntEnum
-from typing import List, Tuple
 from fastjsonschema import compile
 from prettytable import PrettyTable
+from typing import List, Tuple, Optional
 
 from api.engine import GenerationResult, PerfMetrics
 
@@ -49,14 +49,10 @@ def evaluate(
 
         scores.append(EvaluationCode.MATCH)
 
-    average_ttft = float("inf")
-    total_ttft = 0
-    average_tpot = float("inf")
-    total_tpot = 0
-    average_tgt = float("inf")
-    total_tgt = 0
-    average_gct = float("inf")
-    total_gct = 0
+    average_ttft, total_ttft = 0, 0
+    average_tpot, total_tpot = 0, 0
+    average_tgt, total_tgt = 0, 0
+    average_gct, total_gct = 0, 0
 
     for result in results:
         if result.perf_metrics.ttft is not None:
@@ -73,15 +69,15 @@ def evaluate(
             total_gct += 1
 
     return scores, PerfMetrics(
-        ttft=average_ttft / total_ttft,
-        tpot=average_tpot / total_tpot,
-        tgt=average_tgt / total_tgt,
-        gct=average_gct / total_gct,
+        ttft=average_ttft / total_ttft if total_ttft > 0 else None,
+        tpot=average_tpot / total_tpot if total_tpot > 0 else None,
+        tgt=average_tgt / total_tgt if total_tgt > 0 else None,
+        gct=average_gct / total_gct if total_gct > 0 else None,
     )
 
 
-def detect_inf(value: float) -> str:
-    if value == float("inf"):
+def detect_none(value: Optional[float]) -> str:
+    if value is None:
         return "n/a"
     return f"{value:.2f}"
 
@@ -107,10 +103,10 @@ def print_scores(
             [
                 task,
                 f"{accuracy:.2%}",
-                detect_inf(perf_metrics.ttft),
-                detect_inf(perf_metrics.tpot),
-                detect_inf(perf_metrics.gct),
-                detect_inf(perf_metrics.tgt),
+                detect_none(perf_metrics.ttft),
+                detect_none(perf_metrics.tpot),
+                detect_none(perf_metrics.gct),
+                detect_none(perf_metrics.tgt),
             ]
         )
     print(table)
