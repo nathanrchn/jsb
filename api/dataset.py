@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datasets import load_dataset
 from typing import Callable, Iterator, Tuple, Optional
 
-from api.base import Schema, FormatPrompt, DEFAULT_FORMAT_PROMPT
+from api.base import Schema, FormatPrompt
 
 DATASET_SCHEMA_COLUMN = "json_schema"
 DATASET_HUGGINGFACE_PATH = "epfl-dlab/JSONSchemaBench"

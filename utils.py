@@ -3,13 +3,22 @@ from time import time
 from enum import Enum
 from functools import wraps
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Any, TYPE_CHECKING
+from typing import Callable, Dict, List, Optional, Any, TYPE_CHECKING, Type
+
+from engines.openai import OpenAIEngine
+from engines.guidance import GuidanceEngine
 
 if TYPE_CHECKING:
     from api.engine import Engine, GenerationResult
 
 COMPILATION_TIMEOUT = 40
 GENERATION_TIMEOUT = 60
+
+
+ENGINE_TO_CLASS: Dict[str, Type[Engine]] = {
+    "openai": OpenAIEngine,
+    "guidance": GuidanceEngine,
+}
 
 
 class CompileStatusCode(Enum):

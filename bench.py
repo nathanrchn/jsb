@@ -4,9 +4,10 @@ from typing import List, Optional
 from argparse import ArgumentParser
 
 from api.engine import Engine
+from utils import ENGINE_TO_CLASS
+from engines.openai import OpenAIConfig
 from api.dataset import Dataset, DatasetConfig
 from core.evaluator import evaluate, print_scores
-from engines.openai import OpenAIConfig, OpenAIEngine
 from api.base import FormatPrompt, DEFAULT_FORMAT_PROMPT
 
 
@@ -39,12 +40,13 @@ def bench(
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    # parser.add_argument("--engine", type=str, required=True)
+    parser.add_argument("--engine", type=str, required=True)
+    parser.add_argument("--config", type=str, required=True)
     parser.add_argument("--tasks", type=str, required=True)
     parser.add_argument("--limit", type=int, required=False)
     args = parser.parse_args()
 
-    engine = OpenAIEngine(
+    engine = ENGINE_TO_CLASS[args.engine](
         OpenAIConfig(api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o-mini")
     )
 
