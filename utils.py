@@ -129,12 +129,12 @@ class GenerationMetadata:
 
 @dataclass
 class PerfMetrics:
-    ttft: float = 0.0  # Time to first token in s
-    tpot: float = 0.0  # Time per output token in ms
-    tgt: float = 0.0  # Total generation time in s
-    gct: float = 0.0  # Grammar compilation time in s
-    prft: float = 0.0  #  prefilling time in s
-    peak_memory: float = 0.0  # in MB
+    ttft: Optional[float] = None  # Time to first token in s
+    tpot: Optional[float] = None  # Time per output token in ms
+    tgt: Optional[float] = None  # Total generation time in s
+    gct: Optional[float] = None  # Grammar compilation time in s
+    prft: Optional[float] = None  #  prefilling time in s
+    peak_memory: Optional[float] = None  # in MB
 
     @classmethod
     def from_timestamps(

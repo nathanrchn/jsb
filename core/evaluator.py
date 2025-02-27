@@ -1,80 +1,62 @@
-import json
-from enum import IntEnum
-from fastjsonschema import compile
+from uuid import UUID
+from json import loads
 from prettytable import PrettyTable
 from typing import List, Tuple, Optional
+from ipaddress import IPv4Address, IPv6Address
+from jsonschema import Draft202012Validator, FormatChecker, ValidationError, SchemaError
 
+from api.base import Schema
+from utils import CompileStatusCode
 from api.engine import GenerationResult, PerfMetrics
 
 
-class EvaluationCode(IntEnum):
-    MATCH = 0
-    MISMATCH = 1
-    SYNTAX_ERROR = 2
-    SEMANTIC_ERROR = 3
-    EMPTY_INPUT_OR_BAD_FORMAT = 4
-    JSON_NOT_FOUND_ERROR = 5
-    UNKNOWN_ERROR = 6
+def is_json_schema_valid(schema: Schema):
+    try:
+        Draft202012Validator.check_schema(schema)
+        return True
+    except SchemaError:
+        return False
 
 
-def evaluate(
-    results: List[GenerationResult],
-) -> Tuple[List[EvaluationCode], PerfMetrics]:
-    scores = []
+format_checker = FormatChecker()
 
-    for result in results:
-        output = result.output
-        schema = result.json_schema
 
-        if schema is None:
-            scores.append(EvaluationCode.JSON_NOT_FOUND_ERROR)
-            continue
+@format_checker.checks("ipv4")
+def ipv4_check(value):
+    IPv4Address(value)
 
-        if output is None:
-            scores.append(EvaluationCode.EMPTY_INPUT_OR_BAD_FORMAT)
-            continue
 
-        try:
-            json_object = json.loads(output)
-        except (json.JSONDecodeError, RecursionError, ValueError) as e:
-            scores.append(EvaluationCode.SYNTAX_ERROR)
-            continue
+@format_checker.checks("ipv6")
+def ipv6_check(value):
+    IPv6Address(value)
 
-        schema_validator = compile(schema)
-        try:
-            schema_validator(json_object)
-        except Exception:
-            scores.append(EvaluationCode.SEMANTIC_ERROR)
-            continue
 
-        scores.append(EvaluationCode.MATCH)
+@format_checker.checks("uuid")
+def uuid_check(value):
+    UUID(value)
 
-    average_ttft, total_ttft = 0, 0
-    average_tpot, total_tpot = 0, 0
-    average_tgt, total_tgt = 0, 0
-    average_gct, total_gct = 0, 0
 
-    for result in results:
-        if result.perf_metrics.ttft is not None:
-            average_ttft += result.perf_metrics.ttft
-            total_ttft += 1
-        if result.perf_metrics.tpot is not None:
-            average_tpot += result.perf_metrics.tpot
-            total_tpot += 1
-        if result.perf_metrics.tgt is not None:
-            average_tgt += result.perf_metrics.tgt
-            total_tgt += 1
-        if result.perf_metrics.gct is not None:
-            average_gct += result.perf_metrics.gct
-            total_gct += 1
+def validate_json_schema(instance: Schema, schema: Schema) -> bool:
+    if not is_json_schema_valid(schema):
+        return False
+    validator = Draft202012Validator(schema, format_checker=format_checker)
+    try:
+        validator.validate(instance)
+    except ValidationError:
+        return False
+    return True
 
-    return scores, PerfMetrics(
-        ttft=average_ttft / total_ttft if total_ttft > 0 else None,
-        tpot=average_tpot / total_tpot if total_tpot > 0 else None,
-        tgt=average_tgt / total_tgt if total_tgt > 0 else None,
-        gct=average_gct / total_gct if total_gct > 0 else None,
-    )
 
+def median(values: List[float]) -> float:
+    if len(values) == 0:
+        return None
+    sorted_values = sorted(values)
+    n = len(sorted_values)
+    if n % 2 == 0:
+        return (sorted_values[n // 2 - 1] + sorted_values[n // 2]) / 2
+    else:
+        return sorted_values[n // 2]
+    
 
 def detect_none(value: Optional[float]) -> str:
     if value is None:
@@ -82,31 +64,91 @@ def detect_none(value: Optional[float]) -> str:
     return f"{value:.2f}"
 
 
+def evaluate(
+    results: List[GenerationResult],
+) -> Tuple[float, float, PerfMetrics]:
+    declared_coverage = 0
+
+    empirical_total = 0
+    empirical_coverage = 0
+
+    for result in results:
+        output = result.output
+        schema = result.json_schema
+
+        if schema is None or output is None:
+            continue
+
+        if result.metadata.compile_status.code == CompileStatusCode.OK:
+            declared_coverage += 1
+            empirical_total += 1
+
+        try:
+            json_object = loads(output)
+        except Exception:
+            continue
+
+        if not validate_json_schema(json_object, schema):
+            continue
+
+        empirical_coverage += 1
+
+    ttft_list = [
+        result.perf_metrics.ttft
+        for result in results
+        if result.perf_metrics.ttft is not None
+    ]
+    tpot_list = [
+        result.perf_metrics.tpot
+        for result in results
+        if result.perf_metrics.tpot is not None
+    ]
+    tgt_list = [
+        result.perf_metrics.tgt
+        for result in results
+        if result.perf_metrics.tgt is not None
+    ]
+    gct_list = [
+        result.perf_metrics.gct
+        for result in results
+        if result.perf_metrics.gct is not None
+    ]
+
+    return declared_coverage / len(results), empirical_coverage / empirical_total, PerfMetrics(
+        ttft=median(ttft_list),
+        tpot=median(tpot_list),
+        tgt=median(tgt_list),
+        gct=median(gct_list),
+    )
+
+
 def print_scores(
-    scores: List[Tuple[List[EvaluationCode], PerfMetrics]], tasks: List[str]
+    declared_coverage: List[float], empirical_coverage: List[float], perf_metrics: List[PerfMetrics], tasks: List[str]
 ) -> None:
     table = PrettyTable(
         [
             "Task",
-            "Accuracy",
+            "Declared coverage",
+            "Empirical coverage",
             "Time to first token (ms)",
             "Time per output token (ms)",
             "Grammar compilation time (s)",
             "Generation time (s)",
         ]
     )
-    for task, (task_scores, perf_metrics) in zip(tasks, scores):
-        accuracy = sum([score == EvaluationCode.MATCH for score in task_scores]) / len(
-            task_scores
-        )
+    for task, dc, ec, pm in zip(tasks, declared_coverage, empirical_coverage, perf_metrics):
         table.add_row(
             [
                 task,
-                f"{accuracy:.2%}",
-                detect_none(perf_metrics.ttft),
-                detect_none(perf_metrics.tpot),
-                detect_none(perf_metrics.gct),
-                detect_none(perf_metrics.tgt),
+                f"{dc:.2}",
+                f"{ec:.2}",
+                detect_none(pm.ttft),
+                detect_none(pm.tpot),
+                detect_none(pm.gct),
+                detect_none(pm.tgt),
             ]
         )
     print(table)
+
+
+# print coverage and errors

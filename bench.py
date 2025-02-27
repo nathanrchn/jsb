@@ -16,7 +16,9 @@ def bench(
     limit: Optional[int] = None,
     prompt_fn: FormatPrompt = DEFAULT_FORMAT_PROMPT,
 ) -> None:
-    scores = []
+    declared_coverage = []
+    empirical_coverage = []
+    perf_metrics = []
 
     for task in tasks:
         task_results = []
@@ -27,9 +29,12 @@ def bench(
             schema = engine.adapt_schema(schema)
             result = engine.generate(prompt, schema)
             task_results.append(result)
-        scores.append(evaluate(task_results))
+        dc, ec, pm = evaluate(task_results)
+        declared_coverage.append(dc)
+        empirical_coverage.append(ec)
+        perf_metrics.append(pm)
 
-    print_scores(scores, tasks)
+    print_scores(declared_coverage, empirical_coverage, perf_metrics, tasks)
 
 
 if __name__ == "__main__":
