@@ -1,7 +1,7 @@
 from json import loads
 from dataclasses import dataclass
 from datasets import load_dataset
-from typing import Callable, Iterator
+from typing import Callable, Iterator, Tuple
 
 from api.base import Schema, FormatPrompt, DEFAULT_FORMAT_PROMPT
 
@@ -10,14 +10,8 @@ DATASET_HUGGINGFACE_PATH = "epfl-dlab/JSONSchemaBench"
 
 
 @dataclass
-class PromptConfig:
-    format_prompt: FormatPrompt = DEFAULT_FORMAT_PROMPT
-
-
-@dataclass
 class DatasetConfig:
     dataset_name: str
-    prompt_config: PromptConfig
 
 
 class Dataset:
@@ -30,8 +24,8 @@ class Dataset:
     def __len__(self):
         return len(self.dataset)
 
-    def __getitem__(self, idx):
-        return self.dataset[idx]
+    def __getitem__(self, idx: int) -> Schema:
+        return loads(self.dataset[idx][DATASET_SCHEMA_COLUMN])
 
     def filter(self, filter_fn: Callable[[Schema], bool]) -> None:
         self.dataset = self.dataset.filter(
@@ -46,9 +40,7 @@ class Dataset:
     def shuffle(self) -> None:
         self.dataset = self.dataset.shuffle()
 
-    def __iter__(self) -> Iterator[Schema]:
+    def iter(self, prompt_fn: FormatPrompt) -> Iterator[Tuple[str, Schema]]:
         for item in self.dataset:
-            yield item
-
-    def schema_to_prompt(self, schema: Schema) -> str:
-        return self.config.prompt_config.format_prompt(schema)
+            schema = loads(item[DATASET_SCHEMA_COLUMN])
+            yield prompt_fn(schema), schema
