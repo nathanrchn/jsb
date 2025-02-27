@@ -50,31 +50,33 @@ def evaluate(
         scores.append(EvaluationCode.MATCH)
 
     average_ttft = float("inf")
-    if all([result.perf_metrics.ttft is not None for result in results]):
-        average_ttft = sum([result.perf_metrics.ttft for result in results]) / len(
-            results
-        )
-
+    total_ttft = 0
     average_tpot = float("inf")
-    if all([result.perf_metrics.tpot is not None for result in results]):
-        average_tpot = sum([result.perf_metrics.tpot for result in results]) / len(
-            results
-        )
-
+    total_tpot = 0
     average_tgt = float("inf")
-    if all([result.perf_metrics.tgt is not None for result in results]):
-        average_tgt = sum([result.perf_metrics.tgt for result in results]) / len(
-            results
-        )
-
+    total_tgt = 0
     average_gct = float("inf")
-    if all([result.perf_metrics.gct is not None for result in results]):
-        average_gct = sum([result.perf_metrics.gct for result in results]) / len(
-            results
-        )
+    total_gct = 0
+
+    for result in results:
+        if result.perf_metrics.ttft is not None:
+            average_ttft += result.perf_metrics.ttft
+            total_ttft += 1
+        if result.perf_metrics.tpot is not None:
+            average_tpot += result.perf_metrics.tpot
+            total_tpot += 1
+        if result.perf_metrics.tgt is not None:
+            average_tgt += result.perf_metrics.tgt
+            total_tgt += 1
+        if result.perf_metrics.gct is not None:
+            average_gct += result.perf_metrics.gct
+            total_gct += 1
 
     return scores, PerfMetrics(
-        ttft=average_ttft, tpot=average_tpot, tgt=average_tgt, gct=average_gct
+        ttft=average_ttft / total_ttft,
+        tpot=average_tpot / total_tpot,
+        tgt=average_tgt / total_tgt,
+        gct=average_gct / total_gct,
     )
 
 
@@ -104,7 +106,7 @@ def print_scores(
         table.add_row(
             [
                 task,
-                accuracy,
+                f"{accuracy:.2%}",
                 detect_inf(perf_metrics.ttft),
                 detect_inf(perf_metrics.tpot),
                 detect_inf(perf_metrics.gct),
