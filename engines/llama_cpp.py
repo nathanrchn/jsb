@@ -1,7 +1,6 @@
 import os
 import time
 import stopit
-import numpy as np
 from llama_cpp import Llama
 from dataclasses import dataclass
 from typing import List, Dict, Any

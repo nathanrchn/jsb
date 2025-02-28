@@ -35,7 +35,9 @@ class OpenAIEngine(Engine[OpenAIConfig]):
     def __init__(self, config: OpenAIConfig):
         super().__init__(config)
 
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), base_url=self.config.base_url)
+        self.client = OpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"), base_url=self.config.base_url
+        )
         self.tokenizer = encoding_for_model(self.config.model)
 
     def _generate(self, prompt: str, schema: Dict[str, Any]) -> GenerationResult:

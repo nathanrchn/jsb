@@ -94,7 +94,9 @@ class TokenUsage:
         )
 
     def __repr__(self) -> str:
-        return f"token usage: {self.input_tokens:,} input, {self.output_tokens:,} output."
+        return (
+            f"token usage: {self.input_tokens:,} input, {self.output_tokens:,} output."
+        )
 
 
 @dataclass
@@ -221,7 +223,9 @@ def profile_generation(
 
     return wrapper
 
+
 T = TypeVar("T")
+
 
 def load_config(config_type: Type[T], config_path: str) -> T:
     config = OmegaConf.load(config_path)

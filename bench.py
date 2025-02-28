@@ -1,10 +1,8 @@
-import os
 from tqdm import tqdm
 from typing import List, Optional
 from argparse import ArgumentParser
 
 from api.engine import Engine
-from engines.openai import OpenAIConfig
 from api.dataset import Dataset, DatasetConfig
 from core.evaluator import evaluate, print_scores
 from api.base import FormatPrompt, DEFAULT_FORMAT_PROMPT
