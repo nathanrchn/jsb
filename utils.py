@@ -1,9 +1,11 @@
 from time import time
 from enum import Enum
 from functools import wraps
+from omegaconf import OmegaConf
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Any, TYPE_CHECKING, Type
+from typing import Callable, Dict, List, Optional, Any, TYPE_CHECKING, Type, TypeVar
 
+from api.engine import EngineConfig
 from engines.openai import OpenAIEngine
 from engines.guidance import GuidanceEngine
 
@@ -17,6 +19,12 @@ GENERATION_TIMEOUT = 60
 ENGINE_TO_CLASS: Dict[str, Type[Engine]] = {
     "openai": OpenAIEngine,
     "guidance": GuidanceEngine,
+}
+
+
+ENGINE_TO_CONFIG: Dict[str, Type[EngineConfig]] = {
+    "openai": OpenAIEngine.Config,
+    "guidance": GuidanceEngine.Config,
 }
 
 
@@ -212,3 +220,9 @@ def profile_generation(
         return result
 
     return wrapper
+
+T = TypeVar("T")
+
+def load_config(config_type: Type[T], config_path: str) -> T:
+    config = OmegaConf.load(config_path)
+    return OmegaConf.structured(config_type, config)
