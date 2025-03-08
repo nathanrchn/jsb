@@ -15,7 +15,6 @@ from core.types import (
     CompileStatusCode,
     DecodingStatus,
     DecodingStatusCode,
-    Conversation,
     Token,
 )
 from core.registry import register_engine
@@ -84,13 +83,11 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
             metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
             metadata.grammar_compilation_end_time = time.time()
 
-        conversation = Conversation(user_messages=[{"role": "user", "content": prompt}])
-
         try:
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     generator = self.model.create_chat_completion(
-                        messages=conversation.to_messages(),
+                        messages=[{"role": "user", "content": prompt}],
                         stream=True,
                         logprobs=True,
                         grammar=grammar,

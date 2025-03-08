@@ -145,17 +145,3 @@ class PerfMetrics:
             gct=gct,
             prft=prft,
         )
-
-
-@dataclass
-class Conversation:
-    system_message: Optional[Dict[str, str]] = None
-    user_messages: Optional[List[Dict[str, str]]] = []
-
-    def to_messages(self) -> List[Dict[str, str]]:
-        messages = []
-        if self.system_message:
-            messages.append(self.system_message)
-        if self.user_messages:
-            messages.extend(self.user_messages)
-        return messages
