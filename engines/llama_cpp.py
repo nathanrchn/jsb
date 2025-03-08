@@ -1,6 +1,7 @@
 import os
 import time
 import stopit
+from json import dumps
 from llama_cpp import Llama
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
@@ -54,7 +55,7 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
             try:
                 with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
                     if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
-                        grammar = LlamaGrammar.from_json_schema(schema, verbose=False)
+                        grammar = LlamaGrammar.from_json_schema(dumps(schema), verbose=False)
                         metadata.grammar_compilation_end_time = time.time()
                         metadata.compile_status = CompileStatus(
                             code=CompileStatusCode.OK

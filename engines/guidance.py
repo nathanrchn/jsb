@@ -25,8 +25,8 @@ GENERATION_TIMEOUT = 60
 
 @dataclass
 class GuidanceConfig(EngineConfig):
-    max_tokens: int = 100000000
     model_engine_config: LlamaCppConfig
+    max_tokens: int = 100000000
 
 
 class GuidanceEngine(Engine[GuidanceConfig]):
