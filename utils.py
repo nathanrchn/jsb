@@ -5,13 +5,14 @@ from omegaconf import OmegaConf
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Any, TYPE_CHECKING, Type, TypeVar
 
+from engines.gemini import GeminiEngine
+from engines.openai import OpenAIEngine, OpenAIConfig
+from engines.guidance import GuidanceEngine, GuidanceConfig
+from engines.xgrammar import XGrammarEngine, XGrammarConfig
+from engines.outlines import OutlinesEngine, OutlinesConfig
+from engines.llama_cpp import LlamaCppEngine, LlamaCppConfig
+
 if TYPE_CHECKING:
-    from engines.gemini import GeminiEngine
-    from engines.openai import OpenAIEngine, OpenAIConfig
-    from engines.guidance import GuidanceEngine, GuidanceConfig
-    from engines.xgrammar import XGrammarEngine, XGrammarConfig
-    from engines.outlines import OutlinesEngine, OutlinesConfig
-    from engines.llama_cpp import LlamaCppEngine, LlamaCppConfig
     from api.engine import Engine, EngineConfig, GenerationResult
 
 COMPILATION_TIMEOUT = 40
