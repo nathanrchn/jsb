@@ -21,4 +21,4 @@ T = TypeVar("T")
 
 def load_config(config_type: Type[T], config_path: str) -> T:
     config = OmegaConf.load(config_path)
-    return OmegaConf.structured(config_type, config)
+    return OmegaConf.merge(config, OmegaConf.structured(config_type, config))
