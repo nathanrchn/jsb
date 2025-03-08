@@ -3,10 +3,11 @@ from typing import List, Optional
 from argparse import ArgumentParser
 
 from api.engine import Engine
+from core.utils import load_config
 from api.dataset import Dataset, DatasetConfig
 from core.evaluator import evaluate, print_scores
 from api.base import FormatPrompt, DEFAULT_FORMAT_PROMPT
-from utils import ENGINE_TO_CLASS, ENGINE_TO_CONFIG, load_config
+from core.registry import ENGINE_TO_CLASS, ENGINE_TO_CONFIG
 
 
 def bench(
