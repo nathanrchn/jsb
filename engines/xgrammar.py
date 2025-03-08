@@ -3,7 +3,7 @@ import torch
 import stopit
 import xgrammar as xgr
 from json import dumps
-from typing import List
+from typing import List, Optional
 from dataclasses import dataclass
 
 from transformers import LogitsProcessor
@@ -39,9 +39,8 @@ class TimingLogitsProcessor(LogitsProcessor):
 @dataclass
 class XGrammarConfig(EngineConfig):
     model: str
-    temperature: float
-    max_tokens: int
-    top_p: float
+    temperature: float = 0
+    max_tokens: Optional[int] = None
     grammar_cache_enabled: bool = False
 
 
@@ -120,7 +119,6 @@ class XGrammarEngine(Engine[XGrammarConfig]):
                         generation_config=GenerationConfig(
                             max_new_tokens=self.config.max_tokens,
                             temperature=self.config.temperature,
-                            top_p=self.config.top_p,
                             do_sample=self.config.temperature > 0,
                         ),
                         attention_mask=model_input["attention_mask"],

@@ -23,9 +23,8 @@ GENERATION_TIMEOUT = 60
 @dataclass
 class GuidanceConfig(EngineConfig):
     model: str
-    temperature: float
-    max_tokens: int
-    top_p: float
+    temperature: float = 0
+    max_tokens: int = 100000000
     model_engine: Literal["llamacpp"] = "llamacpp"
 
 
@@ -60,7 +59,6 @@ class GuidanceEngine(Engine[GuidanceConfig]):
                         name="generated_object",
                         temperature=self.config.temperature,
                         max_tokens=self.config.max_tokens,
-                        top_p=self.config.top_p,
                     )
                     metadata.grammar_compilation_end_time = time()
                     metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)

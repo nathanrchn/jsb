@@ -131,8 +131,6 @@ class OpenAIEngine(Engine[OpenAIConfig]):
     def max_context_length(self):
         max_context_length_dict = {
             "gpt-4o": 128 * 1000,
-            "gpt-4o-2024-08-06": 128 * 1000,
-            "gpt-4o-2024-05-13": 128 * 1000,
             "gpt-4o-mini": 128 * 1000,
         }
         return max_context_length_dict[self.config.model]

@@ -21,7 +21,7 @@ GENERATION_TIMEOUT = 60
 ENGINE_TO_CLASS: Dict[str, Type[Engine]] = {
     "openai": OpenAIEngine,
     "guidance": GuidanceEngine,
-    "llamacpp": LlamaCppEngine,
+    "llama_cpp": LlamaCppEngine,
     "gemini": GeminiEngine,
     "xgrammar": XGrammarEngine,
     "outlines": OutlinesEngine,
@@ -31,7 +31,7 @@ ENGINE_TO_CLASS: Dict[str, Type[Engine]] = {
 ENGINE_TO_CONFIG: Dict[str, Type[EngineConfig]] = {
     "openai": OpenAIConfig,
     "guidance": GuidanceConfig,
-    "llamacpp": LlamaCppConfig,
+    "llama_cpp": LlamaCppConfig,
     "gemini": OpenAIConfig,
     "xgrammar": XGrammarConfig,
     "outlines": OutlinesConfig,
@@ -210,14 +210,14 @@ def safe_subtract(a: Optional[float], b: Optional[float]) -> Optional[float]:
 
 
 def profile_generation(
-    generate: Callable[["Engine", str, Dict[str, Any]], "GenerationResult"],
-) -> Callable[["Engine", str, Dict[str, Any]], "GenerationResult"]:
+    generate: Callable[[Engine, str, Dict[str, Any]], GenerationResult],
+) -> Callable[[Engine, str, Dict[str, Any]], GenerationResult]:
     @wraps(generate)
     def wrapper(
-        engine: "Engine", prompt: str, schema: Dict[str, Any]
-    ) -> "GenerationResult":
+        engine: Engine, prompt: str, schema: Dict[str, Any]
+    ) -> GenerationResult:
         gen_start_time: float = time()
-        result: "GenerationResult" = generate(engine, prompt, schema)
+        result: GenerationResult = generate(engine, prompt, schema)
         gen_end_time: float = time()
 
         perf_metrics: PerfMetrics = PerfMetrics.from_timestamps(

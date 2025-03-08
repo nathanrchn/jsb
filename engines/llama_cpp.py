@@ -3,7 +3,7 @@ import time
 import stopit
 from llama_cpp import Llama
 from dataclasses import dataclass
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from llama_cpp.llama_grammar import LlamaGrammar, JSON_GBNF
 
 from api.base import Schema
@@ -28,11 +28,10 @@ JSON_MODE_GBNF = LlamaGrammar.from_string(JSON_GBNF, verbose=False)
 @dataclass
 class LlamaCppConfig(EngineConfig):
     model: str
-    temperature: float
-    max_tokens: int
-    top_p: float
     n_ctx: int = 4096
     verbose: bool = True
+    temperature: float = 0.2
+    max_tokens: Optional[int] = None
 
 
 class LlamaCppEngine(Engine[LlamaCppConfig]):
@@ -96,7 +95,6 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
                         grammar=grammar,
                         temperature=self.config.temperature,
                         max_tokens=self.config.max_tokens,
-                        top_p=self.config.top_p,
                     )
 
                     tokens_str = []

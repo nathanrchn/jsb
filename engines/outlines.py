@@ -26,10 +26,9 @@ GENERATION_TIMEOUT = 60
 @dataclass
 class OutlinesConfig(EngineConfig):
     model: str
-    temperature: float
-    max_tokens: int
-    top_p: float
     n_ctx: int = 4096
+    temperature: float = 0
+    max_tokens: Optional[int] = None
     grammar_cache_enabled: bool = False
     hf_tokenizer_id: Optional[str] = None
 
@@ -82,7 +81,6 @@ class OutlinesEngine(Engine[OutlinesConfig]):
                         prompt,
                         temperature=self.config.temperature,
                         max_tokens=self.config.max_tokens,
-                        top_p=self.config.top_p,
                     )
 
                     tokens = []
