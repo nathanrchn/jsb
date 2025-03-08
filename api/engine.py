@@ -70,7 +70,6 @@ class Engine(ABC, Generic[T]):
     def max_context_length(self) -> int:
         raise NotImplementedError
 
-    @abstractmethod
     def adapt_schema(self, schema: Schema) -> Schema:
         return schema
 
