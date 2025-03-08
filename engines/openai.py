@@ -26,9 +26,10 @@ except ImportError:
 @dataclass
 class OpenAIConfig(EngineConfig):
     model: str
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
     base_url: Optional[str] = None
+    max_tokens: Optional[int] = None
+    temperature: Optional[float] = None
+    api_key_variable_name: Optional[str] = "OPENAI_API_KEY"
 
 
 class OpenAIEngine(Engine[OpenAIConfig]):
@@ -36,7 +37,8 @@ class OpenAIEngine(Engine[OpenAIConfig]):
         super().__init__(config)
 
         self.client = OpenAI(
-            api_key=os.getenv("OPENAI_API_KEY"), base_url=self.config.base_url
+            api_key=os.getenv(self.config.api_key_variable_name),
+            base_url=self.config.base_url,
         )
         self.tokenizer = encoding_for_model(self.config.model)
 
