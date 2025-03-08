@@ -1,8 +1,9 @@
 import stopit
 from time import time
+from llama_cpp import Llama
+from typing import List, Optional
 from dataclasses import dataclass
 from guidance import models, json
-from typing import List, Literal, Optional
 
 from api.base import Schema
 from api.engine import Engine, EngineConfig, GenerationResult
@@ -15,6 +16,7 @@ from core.types import (
     DecodingStatusCode,
 )
 from core.registry import register_engine
+from engines.llama_cpp import LlamaCppConfig
 
 
 COMPILATION_TIMEOUT = 30
@@ -23,31 +25,25 @@ GENERATION_TIMEOUT = 60
 
 @dataclass
 class GuidanceConfig(EngineConfig):
-    model: str
-    temperature: float = 0
     max_tokens: int = 100000000
-    model_engine: Literal["llamacpp"] = "llamacpp"
+    model_engine_config: LlamaCppConfig
 
 
 class GuidanceEngine(Engine[GuidanceConfig]):
     def __init__(self, config: GuidanceConfig):
         super().__init__(config)
 
-        match self.config.model_engine:
-            case "llamacpp":
-                from llama_cpp import Llama
+        self.model = Llama.from_pretrained(
+            self.config.model_engine_config.filename,
+            n_ctx=self.config.model_engine_config.n_ctx,
+            verbose=self.config.model_engine_config.verbose,
+        )
 
-                self.model = Llama.from_pretrained(self.config.model)
+        self.guidance_model_state = models.LlamaCpp(
+            self.model, echo=False, caching=False
+        )
 
-                self.guidance_model_state = models.LlamaCpp(
-                    self.model, echo=False, caching=False
-                )
-
-                self.tokenizer = self.guidance_model_state.engine.tokenizer
-            case _:
-                raise ValueError(
-                    f"model engine {self.config.model_engine} not supported"
-                )
+        self.tokenizer = self.guidance_model_state.engine.tokenizer
 
     def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
         metadata = GenerationMetadata()
@@ -58,7 +54,7 @@ class GuidanceEngine(Engine[GuidanceConfig]):
                     generation_op = json(
                         schema=schema,
                         name="generated_object",
-                        temperature=self.config.temperature,
+                        temperature=self.config.model_engine_config.temperature,
                         max_tokens=self.config.max_tokens,
                     )
                     metadata.grammar_compilation_end_time = time()
