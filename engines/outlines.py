@@ -2,7 +2,7 @@ import json
 import time
 import stopit
 from dataclasses import dataclass
-from typing import List, Optional, Union, Dict, Any
+from typing import List, Optional
 
 import outlines
 from outlines.caching import cache_disabled

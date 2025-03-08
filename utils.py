@@ -5,12 +5,14 @@ from omegaconf import OmegaConf
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Any, TYPE_CHECKING, Type, TypeVar
 
-from api.engine import EngineConfig
-from engines.openai import OpenAIEngine
-from engines.guidance import GuidanceEngine
-
 if TYPE_CHECKING:
-    from api.engine import Engine, GenerationResult
+    from engines.gemini import GeminiEngine
+    from engines.openai import OpenAIEngine, OpenAIConfig
+    from engines.guidance import GuidanceEngine, GuidanceConfig
+    from engines.xgrammar import XGrammarEngine, XGrammarConfig
+    from engines.outlines import OutlinesEngine, OutlinesConfig
+    from engines.llama_cpp import LlamaCppEngine, LlamaCppConfig
+    from api.engine import Engine, EngineConfig, GenerationResult
 
 COMPILATION_TIMEOUT = 40
 GENERATION_TIMEOUT = 60
@@ -19,12 +21,20 @@ GENERATION_TIMEOUT = 60
 ENGINE_TO_CLASS: Dict[str, Type[Engine]] = {
     "openai": OpenAIEngine,
     "guidance": GuidanceEngine,
+    "llamacpp": LlamaCppEngine,
+    "gemini": GeminiEngine,
+    "xgrammar": XGrammarEngine,
+    "outlines": OutlinesEngine,
 }
 
 
 ENGINE_TO_CONFIG: Dict[str, Type[EngineConfig]] = {
-    "openai": OpenAIEngine.Config,
-    "guidance": GuidanceEngine.Config,
+    "openai": OpenAIConfig,
+    "guidance": GuidanceConfig,
+    "llamacpp": LlamaCppConfig,
+    "gemini": OpenAIConfig,
+    "xgrammar": XGrammarConfig,
+    "outlines": OutlinesConfig,
 }
 
 
@@ -142,8 +152,8 @@ class PerfMetrics:
     tpot: Optional[float] = None  # Time per output token in ms
     tgt: Optional[float] = None  # Total generation time in s
     gct: Optional[float] = None  # Grammar compilation time in s
-    prft: Optional[float] = None  #  prefilling time in s
-    peak_memory: Optional[float] = None  # in MB
+    prft: Optional[float] = None  # Prefilling time in s
+    peak_memory: Optional[float] = None  # In MB
 
     @classmethod
     def from_timestamps(
