@@ -6,7 +6,7 @@ from ipaddress import IPv4Address, IPv6Address
 from jsonschema import Draft202012Validator, FormatChecker, ValidationError, SchemaError
 
 from api.base import Schema
-from utils import CompileStatusCode
+from core.types import CompileStatusCode
 from api.engine import GenerationResult, PerfMetrics
 
 
