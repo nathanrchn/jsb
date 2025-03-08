@@ -2,6 +2,7 @@ from tqdm import tqdm
 from typing import List, Optional
 from argparse import ArgumentParser
 
+import engines
 from api.engine import Engine
 from core.utils import load_config
 from api.dataset import Dataset, DatasetConfig

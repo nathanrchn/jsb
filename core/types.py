@@ -1,6 +1,8 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Dict, Optional
 from dataclasses import dataclass, field
+
+from core.utils import safe_divide, safe_subtract
 
 
 class CompileStatusCode(Enum):
@@ -118,3 +120,42 @@ class PerfMetrics:
     gct: Optional[float] = None  # Grammar compilation time in s
     prft: Optional[float] = None  # Prefilling time in s
     peak_memory: Optional[float] = None  # In MB
+
+    @classmethod
+    def from_timestamps(
+        cls,
+        start_time: float,
+        grammar_compilation_end_time: Optional[float],
+        first_token_arrival_time: Optional[float],
+        end_time: float,
+        num_output_tokens: int,
+    ):
+        ttft = safe_subtract(first_token_arrival_time, start_time)
+        tpot = safe_divide(
+            safe_subtract(end_time, first_token_arrival_time),
+            safe_subtract(num_output_tokens, 1),
+        )
+        tgt = safe_subtract(end_time, start_time)
+        gct = safe_subtract(grammar_compilation_end_time, start_time)
+        prft = safe_subtract(first_token_arrival_time, grammar_compilation_end_time)
+        return cls(
+            ttft=ttft,
+            tpot=tpot * 1000 if tpot is not None else None,
+            tgt=tgt,
+            gct=gct,
+            prft=prft,
+        )
+
+
+@dataclass
+class Conversation:
+    system_message: Optional[Dict[str, str]] = None
+    user_messages: Optional[List[Dict[str, str]]] = []
+
+    def to_messages(self) -> List[Dict[str, str]]:
+        messages = []
+        if self.system_message:
+            messages.append(self.system_message)
+        if self.user_messages:
+            messages.extend(self.user_messages)
+        return messages
