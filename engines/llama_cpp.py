@@ -28,6 +28,7 @@ JSON_MODE_GBNF = LlamaGrammar.from_string(JSON_GBNF, verbose=False)
 @dataclass
 class LlamaCppConfig(EngineConfig):
     model: str
+    filename: str
     n_ctx: int = 4096
     verbose: bool = True
     temperature: float = 0.2
@@ -40,6 +41,7 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
 
         self.model = Llama.from_pretrained(
             repo_id=self.config.model,
+            filename=self.config.filename,
             n_ctx=self.config.n_ctx,
             verbose=self.config.verbose,
         )
