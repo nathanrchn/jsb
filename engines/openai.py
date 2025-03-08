@@ -5,7 +5,7 @@ from typing import Dict, Any, List, Optional
 from jsonschema import Draft202012Validator, SchemaError
 
 from api.engine import Engine, EngineConfig, GenerationResult
-from utils import (
+from core.types import (
     TokenUsage,
     Token,
     GenerationMetadata,
@@ -14,6 +14,7 @@ from utils import (
     CompileStatusCode,
     DecodingStatusCode,
 )
+from core.registry import register_engine
 
 try:
     from tiktoken import encoding_for_model
@@ -175,3 +176,6 @@ def is_json_schema_valid(schema: dict):
         return True
     except SchemaError:
         return False
+
+
+register_engine("openai", OpenAIEngine, OpenAIConfig)

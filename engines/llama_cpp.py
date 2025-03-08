@@ -8,7 +8,7 @@ from llama_cpp.llama_grammar import LlamaGrammar, JSON_GBNF
 
 from api.base import Schema
 from api.engine import Engine, EngineConfig, GenerationResult
-from utils import (
+from core.types import (
     TokenUsage,
     GenerationMetadata,
     CompileStatus,
@@ -18,6 +18,7 @@ from utils import (
     Conversation,
     Token,
 )
+from core.registry import register_engine
 
 COMPILATION_TIMEOUT = 30
 GENERATION_TIMEOUT = 60
@@ -198,3 +199,6 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
     @property
     def max_context_length(self) -> int:
         return self.model.n_ctx()
+
+
+register_engine("llama_cpp", LlamaCppEngine, LlamaCppConfig)

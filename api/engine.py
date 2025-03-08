@@ -3,15 +3,15 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import List, Optional, TypeVar, Generic
 
-from utils import (
+from core.types import (
     TokenUsage,
     Token,
     GenerationMetadata,
     PerfMetrics,
     TokenizationAnalysis,
-    profile_generation,
 )
 from api.base import Schema
+from core.profile import profile_generation
 
 
 @dataclass

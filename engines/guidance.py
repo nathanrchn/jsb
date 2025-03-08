@@ -6,7 +6,7 @@ from typing import List, Literal, Optional
 
 from api.base import Schema
 from api.engine import Engine, EngineConfig, GenerationResult
-from utils import (
+from core.types import (
     TokenUsage,
     GenerationMetadata,
     CompileStatus,
@@ -14,6 +14,7 @@ from utils import (
     DecodingStatus,
     DecodingStatusCode,
 )
+from core.registry import register_engine
 
 
 COMPILATION_TIMEOUT = 30
@@ -134,3 +135,6 @@ class GuidanceEngine(Engine[GuidanceConfig]):
     @property
     def max_context_length(self) -> int:
         return self.model.n_ctx()
+
+
+register_engine("guidance", GuidanceEngine, GuidanceConfig)

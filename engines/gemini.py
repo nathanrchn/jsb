@@ -1,4 +1,6 @@
 from typing import List, Optional
+
+from core.registry import register_engine
 from engines.openai import OpenAIEngine, OpenAIConfig
 
 
@@ -25,3 +27,6 @@ class GeminiEngine(OpenAIEngine):
             "models/gemini-1.5-pro": 2_097_152,
         }
         return max_context_length_dict[self.config.model]
+
+
+register_engine("gemini", GeminiEngine, OpenAIConfig)

@@ -11,7 +11,7 @@ from transformers.generation import GenerationConfig
 
 from api.base import Schema
 from api.engine import Engine, EngineConfig, GenerationResult
-from utils import (
+from core.types import (
     TokenUsage,
     GenerationMetadata,
     CompileStatus,
@@ -19,6 +19,7 @@ from utils import (
     DecodingStatus,
     DecodingStatusCode,
 )
+from core.registry import register_engine
 
 COMPILATION_TIMEOUT = 30
 GENERATION_TIMEOUT = 60
@@ -181,3 +182,6 @@ class XGrammarEngine(Engine[XGrammarConfig]):
     @property
     def max_context_length(self) -> int:
         return self.tokenizer.model_max_length
+
+
+register_engine("xgrammar", XGrammarEngine, XGrammarConfig)

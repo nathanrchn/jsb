@@ -10,7 +10,7 @@ from outlines.generate.api import SequenceGeneratorAdapter
 
 from api.base import Schema
 from api.engine import Engine, EngineConfig, GenerationResult
-from utils import (
+from core.types import (
     TokenUsage,
     GenerationMetadata,
     CompileStatus,
@@ -18,6 +18,7 @@ from utils import (
     DecodingStatus,
     DecodingStatusCode,
 )
+from core.registry import register_engine
 
 COMPILATION_TIMEOUT = 30
 GENERATION_TIMEOUT = 60
@@ -190,3 +191,6 @@ class OutlinesEngine(Engine[OutlinesConfig]):
     def adapt_schema(self, schema: Schema) -> Schema:
         """Adapt schema if needed before processing."""
         return schema
+
+
+register_engine("outlines", OutlinesEngine, OutlinesConfig)
