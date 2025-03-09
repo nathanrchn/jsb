@@ -1,9 +1,7 @@
 import stopit
 from time import time
-from llama_cpp import Llama
 from typing import List, Optional
 from dataclasses import dataclass
-from guidance import models, json
 
 from api.base import Schema
 from core.registry import register_engine
@@ -33,19 +31,25 @@ class GuidanceEngine(Engine[GuidanceConfig]):
     def __init__(self, config: GuidanceConfig):
         super().__init__(config)
 
+        from llama_cpp import Llama
+        from guidance.models import LlamaCpp
+
         self.model = Llama.from_pretrained(
-            self.config.model_engine_config.filename,
+            self.config.model_engine_config.model,
+            filename=self.config.model_engine_config.filename,
             n_ctx=self.config.model_engine_config.n_ctx,
             verbose=self.config.model_engine_config.verbose,
+            n_gpu_layers=self.config.model_engine_config.n_gpu_layers,
         )
 
-        self.guidance_model_state = models.LlamaCpp(
+        self.guidance_model_state = LlamaCpp(
             self.model, echo=False, caching=False
         )
 
         self.tokenizer = self.guidance_model_state.engine.tokenizer
 
     def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
+        from guidance import json
         metadata = GenerationMetadata()
 
         try:

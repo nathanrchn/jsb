@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Dict, Optional
+from typing import Optional
 from dataclasses import dataclass, field
 
 from core.utils import safe_divide, safe_subtract
@@ -26,34 +26,16 @@ class DecodingStatusCode(Enum):
     UNKOWN_ERROR = 4
 
 
-class JsonSchemaMatchingCode(Enum):
-    TBD = -1
-    MATCH = 0
-    SYNTAX_ERROR = 1
-    SEMANTIC_ERROR = 2
-    JSON_NOT_FOUND_ERROR = 3
-    UNKOWN_ERROR = 4
-    SKIPPED = 5
-    EMPTY_INPUT_OR_BAD_FORMAT = 6
-
-
-class ExactMatchStatusCode(Enum):
-    TBD = -1
-    MATCH = 0
-    MISMATCH = 1
-    EMPTY_INPUT_OR_BAD_FORMAT = 2
-
-
 @dataclass
 class CompileStatus:
     code: CompileStatusCode = CompileStatusCode.TBD
-    message: str = "unknown"
+    message: Optional[str] = None
 
 
 @dataclass
 class DecodingStatus:
     code: DecodingStatusCode = DecodingStatusCode.TBD
-    message: str = "unknown"
+    message: Optional[str] = None
 
 
 @dataclass
@@ -76,28 +58,8 @@ class TokenUsage:
 
 
 @dataclass
-class TokenDiff:
-    index: int
-    original_id: int
-    original_token: str
-    encoded_id: int
-    encoded_token: str
-
-
-@dataclass
-class TokenizationAnalysis:
-    match: bool = False
-    original_length: int = 0
-    encoded_length: int = 0
-    num_differing_tokens: int = 0
-    first_divergence_index: Optional[int] = None
-    differing_token_indices: List[int] = field(default_factory=list)
-    token_diffs: List[TokenDiff] = field(default_factory=list)
-
-
-@dataclass
 class Token:
-    id: int
+    id: Optional[int] = None
     text: Optional[str] = None
     logprob: Optional[float] = None
     unmasked_logprob: Optional[float] = None

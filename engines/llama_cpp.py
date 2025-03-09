@@ -2,10 +2,8 @@ import os
 import time
 import stopit
 from json import dumps
-from llama_cpp import Llama
 from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
-from llama_cpp.llama_grammar import LlamaGrammar, JSON_GBNF
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 
 from api.base import Schema
 from core.registry import register_engine
@@ -20,10 +18,11 @@ from core.types import (
     Token,
 )
 
+if TYPE_CHECKING:
+    from llama_cpp.llama_grammar import LlamaGrammar
+
 COMPILATION_TIMEOUT = 30
 GENERATION_TIMEOUT = 60
-
-JSON_MODE_GBNF = LlamaGrammar.from_string(JSON_GBNF, verbose=False)
 
 
 @dataclass
@@ -32,6 +31,7 @@ class LlamaCppConfig(EngineConfig):
     filename: str
     n_ctx: int = 4096
     verbose: bool = True
+    n_gpu_layers: int = -1
     temperature: float = 0.2
     max_tokens: Optional[int] = None
 
@@ -40,14 +40,18 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
     def __init__(self, config: LlamaCppConfig):
         super().__init__(config)
 
+        from llama_cpp import Llama
+
         self.model = Llama.from_pretrained(
             repo_id=self.config.model,
             filename=self.config.filename,
             n_ctx=self.config.n_ctx,
             verbose=self.config.verbose,
+            n_gpu_layers=self.config.n_gpu_layers,
         )
 
     def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
+        from llama_cpp.llama_grammar import LlamaGrammar
         metadata = GenerationMetadata()
 
         grammar = None
@@ -160,7 +164,7 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
             generated_tokens=generated_tokens,
         )
 
-    def _check_grammar_safety(self, grammar: LlamaGrammar) -> Dict[str, Any]:
+    def _check_grammar_safety(self, grammar: "LlamaGrammar") -> Dict[str, Any]:
         def child_process():
             import signal
             from llama_cpp._internals import LlamaSampler

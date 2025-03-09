@@ -1,14 +1,8 @@
-import json
-import time
 import stopit
+from time import time
+from json import dumps
 from dataclasses import dataclass
-from typing import List, Optional
-
-from outlines.models import llamacpp
-from outlines.caching import cache_disabled
-from outlines.generate import json as outlines_json
-from llama_cpp.llama_tokenizer import LlamaHFTokenizer
-from outlines.generate.api import SequenceGeneratorAdapter
+from typing import List, Optional, TYPE_CHECKING
 
 from api.base import Schema
 from core.registry import register_engine
@@ -22,6 +16,9 @@ from core.types import (
     DecodingStatus,
     DecodingStatusCode,
 )
+
+if TYPE_CHECKING:
+    from outlines.generate.api import SequenceGeneratorAdapter
 
 COMPILATION_TIMEOUT = 30
 GENERATION_TIMEOUT = 60
@@ -38,6 +35,9 @@ class OutlinesEngine(Engine[OutlinesConfig]):
     def __init__(self, config: OutlinesConfig):
         super().__init__(config)
 
+        from outlines.models import llamacpp
+        from llama_cpp.llama_tokenizer import LlamaHFTokenizer
+
         if self.config.hf_tokenizer_id:
             tokenizer = LlamaHFTokenizer.from_pretrained(self.config.hf_tokenizer_id)
         else:
@@ -45,8 +45,10 @@ class OutlinesEngine(Engine[OutlinesConfig]):
 
         self.model = llamacpp(
             repo_id=self.config.model_engine_config.model,
+            filename=self.config.model_engine_config.filename,
             tokenizer=tokenizer,
             n_ctx=self.config.model_engine_config.n_ctx,
+            n_gpu_layers=self.config.model_engine_config.n_gpu_layers,
         )
 
     def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
@@ -69,7 +71,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
                     tokens = []
                     for i, token in enumerate(token_iterator):
                         if i == 0:
-                            metadata.first_token_arrival_time = time.time()
+                            metadata.first_token_arrival_time = time()
                         tokens.append(token)
 
                     output = "".join(tokens)
@@ -91,7 +93,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
             return GenerationResult(input=prompt, output="", metadata=metadata)
 
         if isinstance(output, dict):
-            output = json.dumps(output)
+            output = dumps(output)
         elif output is None:
             output = ""
         elif not isinstance(output, str):
@@ -114,21 +116,24 @@ class OutlinesEngine(Engine[OutlinesConfig]):
 
     def _compile_grammar(
         self, schema: Schema, metadata: GenerationMetadata
-    ) -> SequenceGeneratorAdapter:
+    ) -> "SequenceGeneratorAdapter":
+        from outlines.caching import cache_disabled
+        from outlines.generate import json as outlines_json
+
         try:
             with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     if not self.config.grammar_cache_enabled:
                         with cache_disabled():
                             generator = outlines_json(
-                                self.model, schema_object=json.dumps(schema)
+                                self.model, schema_object=dumps(schema)
                             )
                     else:
                         generator = outlines_json(
-                            self.model, schema_object=json.dumps(schema)
+                            self.model, schema_object=dumps(schema)
                         )
 
-                    metadata.grammar_compilation_end_time = time.time()
+                    metadata.grammar_compilation_end_time = time()
                     metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:

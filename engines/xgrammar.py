@@ -1,16 +1,14 @@
 import time
 import torch
 import stopit
-import xgrammar as xgr
 from json import dumps
-from typing import List, Optional
 from dataclasses import dataclass
+from typing import List, Optional
 
-from transformers import LogitsProcessor
-from transformers.generation import GenerationConfig
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers.generation import LogitsProcessor
 
 from api.base import Schema
+from core.registry import register_engine
 from api.engine import Engine, EngineConfig, GenerationResult
 from core.types import (
     TokenUsage,
@@ -20,7 +18,6 @@ from core.types import (
     DecodingStatus,
     DecodingStatusCode,
 )
-from core.registry import register_engine
 
 COMPILATION_TIMEOUT = 30
 GENERATION_TIMEOUT = 60
@@ -50,19 +47,25 @@ class XGrammarEngine(Engine[XGrammarConfig]):
     def __init__(self, config: XGrammarConfig):
         super().__init__(config)
 
+        from xgrammar import TokenizerInfo, GrammarCompiler
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.model)
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config.model, torch_dtype=torch.bfloat16, device_map="auto"
         )
 
-        tokenizer_info = xgr.TokenizerInfo.from_huggingface(
+        tokenizer_info = TokenizerInfo.from_huggingface(
             self.tokenizer, vocab_size=self.model.config.vocab_size
         )
-        self.grammar_compiler = xgr.GrammarCompiler(
+        self.grammar_compiler = GrammarCompiler(
             tokenizer_info, cache_enabled=self.config.grammar_cache_enabled
         )
 
     def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
+        from transformers.generation import GenerationConfig
+        from xgrammar.contrib.hf import LogitsProcessor as XGrammarLogitsProcessor
+
         metadata = GenerationMetadata()
         timing_processor = TimingLogitsProcessor()
         logits_processors = [timing_processor]
@@ -77,7 +80,7 @@ class XGrammarEngine(Engine[XGrammarConfig]):
                     metadata.grammar_compilation_end_time = time.time()
                     metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
                     logits_processors.append(
-                        xgr.contrib.hf.LogitsProcessor(compiled_grammar)
+                        XGrammarLogitsProcessor(compiled_grammar)
                     )
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:

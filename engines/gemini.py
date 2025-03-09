@@ -1,5 +1,5 @@
 import os
-from google.generativeai import GenerativeModel
+from typing import Optional, List
 
 from api.base import Schema
 from core.registry import register_engine
@@ -15,7 +15,16 @@ class GeminiEngine(OpenAIEngine):
             api_key_variable_name="GEMINI_API_KEY",
         )
 
-        self.model = GenerativeModel(api_key=os.getenv("GEMINI_API_KEY"))
+        from google.generativeai import GenerativeModel, configure
+
+        configure(api_key=os.getenv("GEMINI_API_KEY"))
+        self.model = GenerativeModel(model_name=self.config.model)
+
+    def encode(self, _: str) -> Optional[List[int]]:
+        return None
+
+    def decode(self, _: List[int]) -> Optional[str]:
+        return None
 
     def count_tokens(self, text: str) -> int:
         return self.model.count_tokens(text).total_tokens

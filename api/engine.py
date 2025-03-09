@@ -4,11 +4,10 @@ from dataclasses import dataclass, field
 from typing import List, Optional, TypeVar, Generic
 
 from core.types import (
-    TokenUsage,
     Token,
-    GenerationMetadata,
+    TokenUsage,
     PerfMetrics,
-    TokenizationAnalysis,
+    GenerationMetadata,
 )
 from api.base import Schema
 from core.profile import profile_generation
@@ -34,9 +33,6 @@ class GenerationResult:
     token_usage: TokenUsage = field(default_factory=TokenUsage)
     perf_metrics: PerfMetrics = field(default_factory=PerfMetrics)
     metadata: GenerationMetadata = field(default_factory=GenerationMetadata)
-    tokenization_analysis: TokenizationAnalysis = field(
-        default_factory=TokenizationAnalysis
-    )
 
 
 class Engine(ABC, Generic[T]):
@@ -81,11 +77,11 @@ class Engine(ABC, Generic[T]):
 
     def convert_token_to_id(self, token: str) -> Optional[int]:
         res = self.encode(token)
-        return res[0] if len(res) == 1 else None
+        return res[0] if res else None
 
     def convert_id_to_token(self, id: int) -> Optional[str]:
         res = self.decode([id])
-        return res[0] if len(res) == 1 else None
+        return res[0] if res else None
 
     def count_tokens(self, text: str) -> int:
         res = self.encode(text)

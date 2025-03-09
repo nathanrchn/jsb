@@ -16,13 +16,6 @@ from core.types import (
     DecodingStatusCode,
 )
 
-try:
-    from tiktoken import encoding_for_model
-    from openai import OpenAI
-except ImportError:
-    print("openai is not installed, please install it to use openai engine")
-    raise
-
 
 @dataclass
 class OpenAIConfig(EngineConfig):
@@ -36,15 +29,22 @@ class OpenAIEngine(Engine[OpenAIConfig]):
         self,
         config: OpenAIConfig,
         base_url: Optional[str] = None,
-        api_key_variable_name: Optional[str] = None,
+        api_key_variable_name: Optional[str] = "OPENAI_API_KEY",
     ):
         super().__init__(config)
+
+        from openai import OpenAI
+        from tiktoken import encoding_for_model
 
         self.client = OpenAI(
             api_key=os.getenv(api_key_variable_name),
             base_url=base_url,
         )
-        self.tokenizer = encoding_for_model(self.config.model)
+        self.tokenizer = (
+            encoding_for_model(self.config.model)
+            if base_url is None
+            else None
+        )
 
     def _generate(self, prompt: str, schema: Dict[str, Any]) -> GenerationResult:
         metadata = GenerationMetadata()
@@ -58,8 +58,8 @@ class OpenAIEngine(Engine[OpenAIConfig]):
                     "json_schema": {"schema": schema, "name": "json_schema"},
                 },
                 stream=True,
-                logprobs=True,
-                top_logprobs=20,
+                # logprobs=True,
+                # top_logprobs=20,
                 temperature=self.config.temperature,
                 max_tokens=self.config.max_tokens,
                 stream_options={"include_usage": True},

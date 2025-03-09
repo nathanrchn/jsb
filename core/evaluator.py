@@ -6,6 +6,7 @@ from ipaddress import IPv4Address, IPv6Address
 from jsonschema import Draft202012Validator, FormatChecker, ValidationError, SchemaError
 
 from api.base import Schema
+from core.utils import safe_divide
 from core.types import CompileStatusCode
 from api.engine import GenerationResult, PerfMetrics
 
@@ -66,7 +67,7 @@ def detect_none(value: Optional[float]) -> str:
 
 def evaluate(
     results: List[GenerationResult],
-) -> Tuple[float, float, PerfMetrics]:
+) -> Tuple[Optional[float], Optional[float], PerfMetrics]:
     declared_coverage = 0
 
     empirical_total = 0
@@ -115,8 +116,8 @@ def evaluate(
     ]
 
     return (
-        declared_coverage / len(results),
-        empirical_coverage / empirical_total,
+        safe_divide(declared_coverage, len(results)),
+        safe_divide(empirical_coverage, empirical_total),
         PerfMetrics(
             ttft=median(ttft_list),
             tpot=median(tpot_list),
@@ -127,8 +128,8 @@ def evaluate(
 
 
 def print_scores(
-    declared_coverage: List[float],
-    empirical_coverage: List[float],
+    declared_coverage: List[Optional[float]],
+    empirical_coverage: List[Optional[float]],
     perf_metrics: List[PerfMetrics],
     tasks: List[str],
 ) -> None:
@@ -149,8 +150,8 @@ def print_scores(
         table.add_row(
             [
                 task,
-                f"{dc:.2}",
-                f"{ec:.2}",
+                detect_none(dc),
+                detect_none(ec),
                 detect_none(pm.ttft),
                 detect_none(pm.tpot),
                 detect_none(pm.gct),
