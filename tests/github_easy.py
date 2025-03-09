@@ -22,7 +22,7 @@ guidance_engine = GuidanceEngine(
         )
     )
 )
-bench(guidance_engine, ["Github_easy"], limit=10)
+bench(guidance_engine, ["Github_easy"], limit=100)
 
 # # llama_cpp
 # llama_cpp_engine = LlamaCppEngine(LlamaCppConfig(model="bartowski/Llama-3.2-1B-Instruct-GGUF", filename="*Q8_0.gguf"))

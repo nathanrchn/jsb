@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from api.base import Schema
 from core.registry import register_engine
 from engines.llama_cpp import LlamaCppConfig
+from core.evaluator import is_json_schema_valid
 from api.engine import Engine, EngineConfig, GenerationResult
 from core.types import (
     TokenUsage,
@@ -47,14 +48,14 @@ class GuidanceEngine(Engine[GuidanceConfig]):
         self.tokenizer = self.guidance_model_state.engine.tokenizer
 
     def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
-        from guidance import json
+        from guidance import json as guidance_json
 
         metadata = GenerationMetadata()
 
         try:
             with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
-                    generation_op = json(
+                    generation_op = guidance_json(
                         schema=schema,
                         name="generated_object",
                         temperature=self.config.model_engine_config.temperature,
@@ -130,6 +131,14 @@ class GuidanceEngine(Engine[GuidanceConfig]):
 
     def decode(self, ids: List[int]) -> Optional[str]:
         return self.tokenizer.decode(ids).decode("utf-8")
+
+    def adapt_schema(self, schema: Schema) -> Schema:
+        if "type" not in schema:
+            schema["type"] = "object"
+
+        if not is_json_schema_valid(schema):
+            print("The JSON schema after adaptation is no longer valid.")
+        return schema
 
     @property
     def max_context_length(self) -> int:

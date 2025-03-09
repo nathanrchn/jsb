@@ -70,6 +70,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
 
                     tokens = []
                     for i, token in enumerate(token_iterator):
+                        print(token)
                         if i == 0:
                             metadata.first_token_arrival_time = time()
                         tokens.append(token)
