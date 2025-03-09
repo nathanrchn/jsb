@@ -41,9 +41,7 @@ class OpenAIEngine(Engine[OpenAIConfig]):
             base_url=base_url,
         )
         self.tokenizer = (
-            encoding_for_model(self.config.model)
-            if base_url is None
-            else None
+            encoding_for_model(self.config.model) if base_url is None else None
         )
 
     def _generate(self, prompt: str, schema: Dict[str, Any]) -> GenerationResult:

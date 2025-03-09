@@ -86,3 +86,6 @@ class Engine(ABC, Generic[T]):
     def count_tokens(self, text: str) -> int:
         res = self.encode(text)
         return len(res) if res else 0
+
+    def close(self):
+        pass

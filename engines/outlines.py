@@ -161,8 +161,8 @@ class OutlinesEngine(Engine[OutlinesConfig]):
     def max_context_length(self) -> int:
         return self.config.model_engine_config.n_ctx
 
-    def adapt_schema(self, schema: Schema) -> Schema:
-        return schema
+    def close(self):
+        self.model.close()
 
 
 register_engine("outlines", OutlinesEngine, OutlinesConfig)

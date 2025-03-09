@@ -79,9 +79,7 @@ class XGrammarEngine(Engine[XGrammarConfig]):
                     )
                     metadata.grammar_compilation_end_time = time.time()
                     metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
-                    logits_processors.append(
-                        XGrammarLogitsProcessor(compiled_grammar)
-                    )
+                    logits_processors.append(XGrammarLogitsProcessor(compiled_grammar))
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
                 metadata.compile_status = CompileStatus(

@@ -52,6 +52,7 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
 
     def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
         from llama_cpp.llama_grammar import LlamaGrammar
+
         metadata = GenerationMetadata()
 
         grammar = None
@@ -198,6 +199,9 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
     @property
     def max_context_length(self) -> int:
         return self.model.n_ctx()
+
+    def close(self):
+        self.model.close()
 
 
 register_engine("llama_cpp", LlamaCppEngine, LlamaCppConfig)

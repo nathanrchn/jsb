@@ -42,14 +42,13 @@ class GuidanceEngine(Engine[GuidanceConfig]):
             n_gpu_layers=self.config.model_engine_config.n_gpu_layers,
         )
 
-        self.guidance_model_state = LlamaCpp(
-            self.model, echo=False, caching=False
-        )
+        self.guidance_model_state = LlamaCpp(self.model, echo=False, caching=False)
 
         self.tokenizer = self.guidance_model_state.engine.tokenizer
 
     def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
         from guidance import json
+
         metadata = GenerationMetadata()
 
         try:
@@ -135,6 +134,9 @@ class GuidanceEngine(Engine[GuidanceConfig]):
     @property
     def max_context_length(self) -> int:
         return self.model.n_ctx()
+
+    def close(self):
+        self.model.close()
 
 
 register_engine("guidance", GuidanceEngine, GuidanceConfig)
