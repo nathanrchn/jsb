@@ -68,39 +68,33 @@ class XGrammarEngine(Engine[XGrammarConfig]):
         timing_processor = TimingLogitsProcessor()
         logits_processors = [timing_processor]
 
-        if schema:
-            try:
-                with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
-                    if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
-                        json_schema_str = dumps(schema)
-                        compiled_grammar = self.grammar_compiler.compile_json_schema(
-                            json_schema_str
-                        )
-                        metadata.grammar_compilation_end_time = time.time()
-                        metadata.compile_status = CompileStatus(
-                            code=CompileStatusCode.OK
-                        )
-                        logits_processors.append(
-                            xgr.contrib.hf.LogitsProcessor(compiled_grammar)
-                        )
-
-                if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
-                    metadata.compile_status = CompileStatus(
-                        code=CompileStatusCode.COMPILE_TIMEOUT,
-                        message="Grammar compilation timed out",
+        try:
+            with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
+                if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
+                    json_schema_str = dumps(schema)
+                    compiled_grammar = self.grammar_compiler.compile_json_schema(
+                        json_schema_str
                     )
-                    return GenerationResult(input=prompt, output="", metadata=metadata)
+                    metadata.grammar_compilation_end_time = time.time()
+                    metadata.compile_status = CompileStatus(
+                        code=CompileStatusCode.OK
+                    )
+                    logits_processors.append(
+                        xgr.contrib.hf.LogitsProcessor(compiled_grammar)
+                    )
 
-            except Exception as e:
+            if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
                 metadata.compile_status = CompileStatus(
-                    code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
+                    code=CompileStatusCode.COMPILE_TIMEOUT,
+                    message="Grammar compilation timed out",
                 )
                 return GenerationResult(input=prompt, output="", metadata=metadata)
-        else:
-            compiled_grammar = self.grammar_compiler.compile_builtin_json_grammar()
-            logits_processors.append(xgr.contrib.hf.LogitsProcessor(compiled_grammar))
-            metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
-            metadata.grammar_compilation_end_time = time.time()
+        
+        except Exception as e:
+            metadata.compile_status = CompileStatus(
+                code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
+            )
+            return GenerationResult(input=prompt, output="", metadata=metadata)
 
         model_input = self.tokenizer(
             prompt,

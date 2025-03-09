@@ -8,6 +8,7 @@ from typing import List, Dict, Any, Optional
 from llama_cpp.llama_grammar import LlamaGrammar, JSON_GBNF
 
 from api.base import Schema
+from core.registry import register_engine
 from api.engine import Engine, EngineConfig, GenerationResult
 from core.types import (
     TokenUsage,
@@ -18,7 +19,6 @@ from core.types import (
     DecodingStatusCode,
     Token,
 )
-from core.registry import register_engine
 
 COMPILATION_TIMEOUT = 30
 GENERATION_TIMEOUT = 60
@@ -51,40 +51,35 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
         metadata = GenerationMetadata()
 
         grammar = None
-        if schema:
-            try:
-                with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
-                    if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
-                        grammar = LlamaGrammar.from_json_schema(dumps(schema), verbose=False)
-                        metadata.grammar_compilation_end_time = time.time()
-                        metadata.compile_status = CompileStatus(
-                            code=CompileStatusCode.OK
-                        )
-
-                if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
+        try:
+            with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
+                if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
+                    grammar = LlamaGrammar.from_json_schema(dumps(schema), verbose=False)
+                    metadata.grammar_compilation_end_time = time.time()
                     metadata.compile_status = CompileStatus(
-                        code=CompileStatusCode.COMPILE_TIMEOUT,
-                        message="Grammar compilation timed out",
+                        code=CompileStatusCode.OK
                     )
-                    return GenerationResult(input=prompt, output="", metadata=metadata)
 
-                segfault_check = self._check_grammar_safety(grammar)
-                if not segfault_check["success"]:
-                    metadata.compile_status = CompileStatus(
-                        code=CompileStatusCode.UNSUPPORTED_SCHEMA,
-                        message=f"Failed to add grammar to sampler: {segfault_check}",
-                    )
-                    return GenerationResult(input=prompt, output="", metadata=metadata)
-
-            except Exception as e:
+            if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
                 metadata.compile_status = CompileStatus(
-                    code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
+                    code=CompileStatusCode.COMPILE_TIMEOUT,
+                    message="Grammar compilation timed out",
                 )
                 return GenerationResult(input=prompt, output="", metadata=metadata)
-        else:
-            grammar = JSON_MODE_GBNF
-            metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
-            metadata.grammar_compilation_end_time = time.time()
+
+            segfault_check = self._check_grammar_safety(grammar)
+            if not segfault_check["success"]:
+                metadata.compile_status = CompileStatus(
+                    code=CompileStatusCode.UNSUPPORTED_SCHEMA,
+                    message=f"Failed to add grammar to sampler: {segfault_check}",
+                )
+                return GenerationResult(input=prompt, output="", metadata=metadata)
+
+        except Exception as e:
+            metadata.compile_status = CompileStatus(
+                code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
+            )
+            return GenerationResult(input=prompt, output="", metadata=metadata)
 
         try:
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
