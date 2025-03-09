@@ -16,6 +16,7 @@ def bench(
     tasks: List[str],
     limit: Optional[int] = None,
     prompt_fn: FormatPrompt = DEFAULT_FORMAT_PROMPT,
+    close_engine: bool = True,
 ) -> None:
     declared_coverage = []
     empirical_coverage = []
@@ -37,6 +38,9 @@ def bench(
 
     print_scores(declared_coverage, empirical_coverage, perf_metrics, tasks)
     print(engine.total_usage)
+
+    if close_engine:
+        engine.close()
 
 
 if __name__ == "__main__":
