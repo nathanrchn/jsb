@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 from transformers import LogitsProcessor
 from transformers.generation import GenerationConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from api.base import Schema
 from api.engine import Engine, EngineConfig, GenerationResult
@@ -49,8 +50,6 @@ class XGrammarEngine(Engine[XGrammarConfig]):
     def __init__(self, config: XGrammarConfig):
         super().__init__(config)
 
-        from transformers import AutoModelForCausalLM, AutoTokenizer
-
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.model)
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config.model, torch_dtype=torch.bfloat16, device_map="auto"
@@ -76,9 +75,7 @@ class XGrammarEngine(Engine[XGrammarConfig]):
                         json_schema_str
                     )
                     metadata.grammar_compilation_end_time = time.time()
-                    metadata.compile_status = CompileStatus(
-                        code=CompileStatusCode.OK
-                    )
+                    metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
                     logits_processors.append(
                         xgr.contrib.hf.LogitsProcessor(compiled_grammar)
                     )
@@ -89,7 +86,7 @@ class XGrammarEngine(Engine[XGrammarConfig]):
                     message="Grammar compilation timed out",
                 )
                 return GenerationResult(input=prompt, output="", metadata=metadata)
-        
+
         except Exception as e:
             metadata.compile_status = CompileStatus(
                 code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)

@@ -2,8 +2,9 @@ import os
 from time import time
 from dataclasses import dataclass
 from typing import Dict, Any, List, Optional
-from jsonschema import Draft202012Validator, SchemaError
 
+from core.registry import register_engine
+from core.evaluator import is_json_schema_valid
 from api.engine import Engine, EngineConfig, GenerationResult
 from core.types import (
     TokenUsage,
@@ -14,7 +15,6 @@ from core.types import (
     CompileStatusCode,
     DecodingStatusCode,
 )
-from core.registry import register_engine
 
 try:
     from tiktoken import encoding_for_model
@@ -27,19 +27,22 @@ except ImportError:
 @dataclass
 class OpenAIConfig(EngineConfig):
     model: str
-    base_url: Optional[str] = None
     max_tokens: Optional[int] = None
     temperature: Optional[float] = None
-    api_key_variable_name: Optional[str] = "OPENAI_API_KEY"
 
 
 class OpenAIEngine(Engine[OpenAIConfig]):
-    def __init__(self, config: OpenAIConfig):
+    def __init__(
+        self,
+        config: OpenAIConfig,
+        base_url: Optional[str] = None,
+        api_key_variable_name: Optional[str] = None,
+    ):
         super().__init__(config)
 
         self.client = OpenAI(
-            api_key=os.getenv(self.config.api_key_variable_name),
-            base_url=self.config.base_url,
+            api_key=os.getenv(api_key_variable_name),
+            base_url=base_url,
         )
         self.tokenizer = encoding_for_model(self.config.model)
 
@@ -168,14 +171,6 @@ def set_all_properties_required(schema: object) -> object:
             for item in value:
                 set_all_properties_required(item)
     return schema
-
-
-def is_json_schema_valid(schema: dict):
-    try:
-        Draft202012Validator.check_schema(schema)
-        return True
-    except SchemaError:
-        return False
 
 
 register_engine("openai", OpenAIEngine, OpenAIConfig)

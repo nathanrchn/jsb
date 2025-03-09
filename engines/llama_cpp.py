@@ -54,11 +54,11 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
         try:
             with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
-                    grammar = LlamaGrammar.from_json_schema(dumps(schema), verbose=False)
-                    metadata.grammar_compilation_end_time = time.time()
-                    metadata.compile_status = CompileStatus(
-                        code=CompileStatusCode.OK
+                    grammar = LlamaGrammar.from_json_schema(
+                        dumps(schema), verbose=False
                     )
+                    metadata.grammar_compilation_end_time = time.time()
+                    metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
                 metadata.compile_status = CompileStatus(

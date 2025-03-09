@@ -11,6 +11,8 @@ from llama_cpp.llama_tokenizer import LlamaHFTokenizer
 from outlines.generate.api import SequenceGeneratorAdapter
 
 from api.base import Schema
+from core.registry import register_engine
+from engines.llama_cpp import LlamaCppConfig
 from api.engine import Engine, EngineConfig, GenerationResult
 from core.types import (
     TokenUsage,
@@ -20,7 +22,6 @@ from core.types import (
     DecodingStatus,
     DecodingStatusCode,
 )
-from core.registry import register_engine
 
 COMPILATION_TIMEOUT = 30
 GENERATION_TIMEOUT = 60
@@ -28,10 +29,7 @@ GENERATION_TIMEOUT = 60
 
 @dataclass
 class OutlinesConfig(EngineConfig):
-    model: str
-    n_ctx: int = 4096
-    temperature: float = 0
-    max_tokens: Optional[int] = None
+    model_engine_config: LlamaCppConfig
     grammar_cache_enabled: bool = False
     hf_tokenizer_id: Optional[str] = None
 
@@ -41,16 +39,14 @@ class OutlinesEngine(Engine[OutlinesConfig]):
         super().__init__(config)
 
         if self.config.hf_tokenizer_id:
-            tokenizer = LlamaHFTokenizer.from_pretrained(
-                self.config.hf_tokenizer_id
-            )
+            tokenizer = LlamaHFTokenizer.from_pretrained(self.config.hf_tokenizer_id)
         else:
             tokenizer = None
 
         self.model = llamacpp(
-            repo_id=self.config.model,
+            repo_id=self.config.model_engine_config.model,
             tokenizer=tokenizer,
-            n_ctx=self.config.n_ctx,
+            n_ctx=self.config.model_engine_config.n_ctx,
         )
 
     def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
@@ -66,8 +62,8 @@ class OutlinesEngine(Engine[OutlinesConfig]):
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     token_iterator = generator.stream(
                         prompt,
-                        temperature=self.config.temperature,
-                        max_tokens=self.config.max_tokens,
+                        temperature=self.config.model_engine_config.temperature,
+                        max_tokens=self.config.model_engine_config.max_tokens,
                     )
 
                     tokens = []
@@ -158,7 +154,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
 
     @property
     def max_context_length(self) -> int:
-        return self.config.n_ctx
+        return self.config.model_engine_config.n_ctx
 
     def adapt_schema(self, schema: Schema) -> Schema:
         return schema

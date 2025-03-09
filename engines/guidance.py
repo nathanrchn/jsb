@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from guidance import models, json
 
 from api.base import Schema
+from core.registry import register_engine
+from engines.llama_cpp import LlamaCppConfig
 from api.engine import Engine, EngineConfig, GenerationResult
 from core.types import (
     TokenUsage,
@@ -15,8 +17,6 @@ from core.types import (
     DecodingStatus,
     DecodingStatusCode,
 )
-from core.registry import register_engine
-from engines.llama_cpp import LlamaCppConfig
 
 
 COMPILATION_TIMEOUT = 30
