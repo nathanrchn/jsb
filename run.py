@@ -1,15 +1,9 @@
-
-
-
-
-
 from argparse import ArgumentParser
 
-from api.base import DEFAULT_FORMAT_PROMPT
-from core import bench
-from core.registry import ENGINE_TO_CLASS, ENGINE_TO_CONFIG
+from core.bench import bench
 from core.utils import load_config
-# import engines # this is used just to register the engines, how to make it work without this import?
+from api.base import DEFAULT_FORMAT_PROMPT
+from core.registry import ENGINE_TO_CLASS, ENGINE_TO_CONFIG
 
 
 if __name__ == "__main__":
