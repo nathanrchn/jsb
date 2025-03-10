@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import List, Optional, TypeVar, Generic
 
-from core.types import (
+from core.custom_types import (
     Token,
     TokenUsage,
     PerfMetrics,
