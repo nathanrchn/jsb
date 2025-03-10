@@ -8,7 +8,7 @@ from api.base import Schema
 from core.registry import register_engine
 from engines.llama_cpp import LlamaCppConfig
 from api.engine import Engine, EngineConfig, GenerationResult
-from core.types import (
+from core.custom_types import (
     TokenUsage,
     GenerationMetadata,
     CompileStatus,
@@ -163,7 +163,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
         return self.config.model_engine_config.n_ctx
 
     def close(self):
-        self.model.close()
+        self.model.model.close()
 
 
 register_engine("outlines", OutlinesEngine, OutlinesConfig)

@@ -8,7 +8,7 @@ from typing import List, Dict, Any, Optional, TYPE_CHECKING
 from api.base import Schema
 from core.registry import register_engine
 from api.engine import Engine, EngineConfig, GenerationResult
-from core.types import (
+from core.custom_types import (
     TokenUsage,
     GenerationMetadata,
     CompileStatus,

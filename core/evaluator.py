@@ -7,7 +7,7 @@ from jsonschema import Draft202012Validator, FormatChecker, ValidationError, Sch
 
 from api.base import Schema
 from core.utils import safe_divide
-from core.types import CompileStatusCode
+from core.custom_types import CompileStatusCode
 from api.engine import GenerationResult, PerfMetrics
 
 
@@ -154,8 +154,8 @@ def print_scores(
                 detect_none(ec),
                 detect_none(pm.ttft),
                 detect_none(pm.tpot),
-                detect_none(pm.gct),
                 detect_none(pm.tgt),
+                detect_none(pm.gct),
             ]
         )
     print(table)

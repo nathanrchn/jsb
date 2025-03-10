@@ -10,7 +10,7 @@ from transformers.generation import LogitsProcessor
 from api.base import Schema
 from core.registry import register_engine
 from api.engine import Engine, EngineConfig, GenerationResult
-from core.types import (
+from core.custom_types import (
     TokenUsage,
     GenerationMetadata,
     CompileStatus,
@@ -54,6 +54,7 @@ class XGrammarEngine(Engine[XGrammarConfig]):
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config.model, torch_dtype=torch.bfloat16, device_map="auto"
         )
+        self.tokenizer.pad_token = self.tokenizer.eos_token
 
         tokenizer_info = TokenizerInfo.from_huggingface(
             self.tokenizer, vocab_size=self.model.config.vocab_size
@@ -121,6 +122,9 @@ class XGrammarEngine(Engine[XGrammarConfig]):
                     metadata.decoding_status = DecodingStatus(
                         code=DecodingStatusCode.OK
                     )
+
+            if len(timing_processor.timestamps) > 0:
+                metadata.first_token_arrival_time = timing_processor.timestamps[0]
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
                 metadata.decoding_status = DecodingStatus(
