@@ -2,7 +2,7 @@ from tqdm import tqdm
 from typing import List, Optional
 from argparse import ArgumentParser
 
-import engines
+import engines as _
 from api.engine import Engine
 from core.utils import load_config
 from api.dataset import Dataset, DatasetConfig
@@ -55,4 +55,4 @@ if __name__ == "__main__":
         load_config(ENGINE_TO_CONFIG[args.engine], args.config)
     )
 
-    bench(engine, args.tasks.split(","), args.limit, DEFAULT_FORMAT_PROMPT)
+    bench(engine, args.tasks.split(","), args.limit, DEFAULT_FORMAT_PROMPT, close_engine=True)
