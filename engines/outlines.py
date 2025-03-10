@@ -35,15 +35,15 @@ class OutlinesEngine(Engine[OutlinesConfig]):
     def __init__(self, config: OutlinesConfig):
         super().__init__(config)
 
-        from outlines.models import llamacpp
         from llama_cpp.llama_tokenizer import LlamaHFTokenizer
+        from outlines.models import llamacpp as outlines_llamacpp
 
         if self.config.hf_tokenizer_id:
             tokenizer = LlamaHFTokenizer.from_pretrained(self.config.hf_tokenizer_id)
         else:
             tokenizer = None
 
-        self.model = llamacpp(
+        self.model = outlines_llamacpp(
             repo_id=self.config.model_engine_config.model,
             filename=self.config.model_engine_config.filename,
             tokenizer=tokenizer,
@@ -56,7 +56,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
 
         generator = self._compile_grammar(schema, metadata)
 
-        if metadata.compile_status.code != CompileStatusCode.OK:
+        if metadata.compile_status.code != CompileStatusCode.OK or generator is None:
             return GenerationResult(input=prompt, output="", metadata=metadata)
 
         try:
@@ -66,11 +66,11 @@ class OutlinesEngine(Engine[OutlinesConfig]):
                         prompt,
                         temperature=self.config.model_engine_config.temperature,
                         max_tokens=self.config.model_engine_config.max_tokens,
+                        stop_at="```\n",
                     )
 
                     tokens = []
                     for i, token in enumerate(token_iterator):
-                        print(token)
                         if i == 0:
                             metadata.first_token_arrival_time = time()
                         tokens.append(token)
@@ -117,7 +117,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
 
     def _compile_grammar(
         self, schema: Schema, metadata: GenerationMetadata
-    ) -> "SequenceGeneratorAdapter":
+    ) -> Optional["SequenceGeneratorAdapter"]:
         from outlines.caching import cache_disabled
         from outlines.generate import json as outlines_json
 
