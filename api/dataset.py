@@ -19,7 +19,7 @@ class Dataset:
     def __init__(self, config: DatasetConfig):
         self.config = config
         self.dataset = load_dataset(
-            path=DATASET_HUGGINGFACE_PATH, split=config.dataset_name
+            path=DATASET_HUGGINGFACE_PATH, name=config.dataset_name, split="all"
         )
 
     def __len__(self):
