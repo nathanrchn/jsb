@@ -163,7 +163,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
         return self.config.model_engine_config.n_ctx
 
     def close(self):
-        self.model.close()
+        self.model.model.close()
 
 
 register_engine("outlines", OutlinesEngine, OutlinesConfig)

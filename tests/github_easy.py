@@ -1,6 +1,5 @@
 import os, sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.bench import bench
 from engines.gemini import GeminiEngine
 from engines.openai import OpenAIEngine, OpenAIConfig
@@ -8,6 +7,8 @@ from engines.guidance import GuidanceEngine, GuidanceConfig
 from engines.outlines import OutlinesEngine, OutlinesConfig
 from engines.xgrammar import XGrammarEngine, XGrammarConfig
 from engines.llama_cpp import LlamaCppEngine, LlamaCppConfig
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # # openai
 # openai_engine = OpenAIEngine(OpenAIConfig(model="gpt-4o-mini"))
@@ -29,7 +30,7 @@ bench(guidance_engine, ["Github_easy"], limit=10)
 
 # # llama_cpp
 # llama_cpp_engine = LlamaCppEngine(LlamaCppConfig(model="bartowski/Llama-3.2-1B-Instruct-GGUF", filename="*Q8_0.gguf"))
-# bench(llama_cpp_engine, ["Github_easy"], limit=10)
+# bench(llama_cpp_engine, ["Github_easy"], limit=10, close_engine=True)
 
 # # outlines
 # outlines_engine = OutlinesEngine(OutlinesConfig(model_engine_config=LlamaCppConfig(model="bartowski/Llama-3.2-1B-Instruct-GGUF", filename="*Q8_0.gguf"), hf_tokenizer_id="meta-llama/Llama-3.2-1B-Instruct"))

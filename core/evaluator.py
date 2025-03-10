@@ -154,8 +154,8 @@ def print_scores(
                 detect_none(ec),
                 detect_none(pm.ttft),
                 detect_none(pm.tpot),
-                detect_none(pm.gct),
                 detect_none(pm.tgt),
+                detect_none(pm.gct),
             ]
         )
     print(table)
