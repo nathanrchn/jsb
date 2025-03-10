@@ -1,3 +1,5 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.bench import bench
 from engines.gemini import GeminiEngine
 from engines.openai import OpenAIEngine, OpenAIConfig
@@ -22,7 +24,7 @@ guidance_engine = GuidanceEngine(
         )
     )
 )
-bench(guidance_engine, ["Github_easy"], limit=100)
+bench(guidance_engine, ["Github_easy"], limit=10)
 
 # # llama_cpp
 # llama_cpp_engine = LlamaCppEngine(LlamaCppConfig(model="bartowski/Llama-3.2-1B-Instruct-GGUF", filename="*Q8_0.gguf"))

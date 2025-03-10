@@ -42,6 +42,21 @@ pip install openai tiktoken
 pip install guidance
 ```
 
+### Outlines Engine
+
+```bash
+pip install outlines
+```
+
+### Llama.cpp Engine
+
+```bash
+pip install llama-cpp-python # this doesn't include CUDA support
+```
+
+For CUDA and other accelerators, you'll need to install the appropriate version of `llama-cpp-python`, check the [llama-cpp-python](https://github.com/abetlen/llama-cpp-python)
+
+
 ## Environment Setup
 
 For the OpenAI engine, you'll need to set up your API key:
