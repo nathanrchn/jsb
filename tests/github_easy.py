@@ -22,7 +22,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 guidance_engine = GuidanceEngine(
     GuidanceConfig(
         model_engine_config=LlamaCppConfig(
-            model="bartowski/Llama-3.2-1B-Instruct-GGUF", filename="*Q8_0.gguf"
+            model="bartowski/google_gemma-3-1b-it-GGUF", filename="*Q8_0.gguf"
         )
     )
 )
