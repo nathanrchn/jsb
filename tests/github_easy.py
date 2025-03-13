@@ -26,16 +26,25 @@ guidance_engine = GuidanceEngine(
         )
     )
 )
-bench(guidance_engine, ["Github_easy"], limit=10)
+bench(guidance_engine, ["Github_easy"], close_engine=True)
 
-# # llama_cpp
-# llama_cpp_engine = LlamaCppEngine(LlamaCppConfig(model="bartowski/Llama-3.2-1B-Instruct-GGUF", filename="*Q8_0.gguf"))
-# bench(llama_cpp_engine, ["Github_easy"], limit=10, close_engine=True)
+# llama_cpp
+llama_cpp_engine = LlamaCppEngine(
+    LlamaCppConfig(model="bartowski/google_gemma-3-1b-it-GGUF", filename="*Q8_0.gguf")
+)
+bench(llama_cpp_engine, ["Github_easy"], close_engine=True)
 
-# # outlines
-# outlines_engine = OutlinesEngine(OutlinesConfig(model_engine_config=LlamaCppConfig(model="bartowski/Llama-3.2-1B-Instruct-GGUF", filename="*Q8_0.gguf"), hf_tokenizer_id="meta-llama/Llama-3.2-1B-Instruct"))
-# bench(outlines_engine, ["Github_easy"], limit=10)
+# outlines
+outlines_engine = OutlinesEngine(
+    OutlinesConfig(
+        model_engine_config=LlamaCppConfig(
+            model="bartowski/google_gemma-3-1b-it-GGUF", filename="*Q8_0.gguf"
+        ),
+        hf_tokenizer_id="google/gemma-3-1b-it",
+    )
+)
+bench(outlines_engine, ["Github_easy"], close_engine=True)
 
-# # xgrammar
-# xgrammar_engine = XGrammarEngine(XGrammarConfig(model="meta-llama/Llama-3.2-1B-Instruct"))
-# bench(xgrammar_engine, ["Github_easy"], limit=10)
+# xgrammar
+xgrammar_engine = XGrammarEngine(XGrammarConfig(model="google/gemma-3-1b-it"))
+bench(xgrammar_engine, ["Github_easy"], close_engine=True)

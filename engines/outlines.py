@@ -52,6 +52,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
         )
 
     def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
+        print(schema)
         metadata = GenerationMetadata()
 
         generator = self._compile_grammar(schema, metadata)
@@ -71,6 +72,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
 
                     tokens = []
                     for i, token in enumerate(token_iterator):
+                        print(token)
                         if i == 0:
                             metadata.first_token_arrival_time = time()
                         tokens.append(token)
