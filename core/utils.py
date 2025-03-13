@@ -1,5 +1,8 @@
+from json import dumps
 from omegaconf import OmegaConf
 from typing import Optional, TypeVar, Type
+
+from core.types import FormatPrompt
 
 
 def safe_divide(a: Optional[float], b: Optional[float]) -> Optional[float]:
@@ -22,3 +25,7 @@ T = TypeVar("T")
 def load_config(config_type: Type[T], config_path: str) -> T:
     config = OmegaConf.load(config_path)
     return OmegaConf.merge(config, OmegaConf.structured(config_type, config))
+
+DEFAULT_FORMAT_PROMPT: FormatPrompt = (
+    lambda schema: f" You need to generate a JSON object that matches the schema below.  Do not include the schema in the output and DIRECTLY return the JSON object without any additional information.  The schema is: {dumps(schema)}"
+)

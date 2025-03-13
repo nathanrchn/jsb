@@ -3,7 +3,7 @@ from typing import List, Optional, Union
 
 from core.engine import Engine
 from core.types import FormatPrompt
-from core.prompts import DEFAULT_FORMAT_PROMPT
+from core.utils import DEFAULT_FORMAT_PROMPT
 from core.dataset import Dataset, DatasetConfig
 from core.evaluator import evaluate, print_scores
 
