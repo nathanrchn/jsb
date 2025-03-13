@@ -1,8 +1,21 @@
 from json import dumps
 from omegaconf import OmegaConf
-from typing import Optional, TypeVar, Type
+from typing import List, Optional, TypeVar, Type
 
 from core.types import FormatPrompt
+
+
+T = TypeVar("T")
+
+
+def load_config(config_type: Type[T], config_path: str) -> T:
+    config = OmegaConf.load(config_path)
+    return OmegaConf.merge(config, OmegaConf.structured(config_type, config))
+
+
+DEFAULT_FORMAT_PROMPT: FormatPrompt = (
+    lambda schema: f" You need to generate a JSON object that matches the schema below.  Do not include the schema in the output and DIRECTLY return the JSON object without any additional information.  The schema is: {dumps(schema)}"
+)
 
 
 def safe_divide(a: Optional[float], b: Optional[float]) -> Optional[float]:
@@ -19,13 +32,18 @@ def safe_subtract(a: Optional[float], b: Optional[float]) -> Optional[float]:
     return a - b
 
 
-T = TypeVar("T")
+def median(values: List[float]) -> float:
+    if len(values) == 0:
+        return None
+    sorted_values = sorted(values)
+    n = len(sorted_values)
+    if n % 2 == 0:
+        return (sorted_values[n // 2 - 1] + sorted_values[n // 2]) / 2
+    else:
+        return sorted_values[n // 2]
 
 
-def load_config(config_type: Type[T], config_path: str) -> T:
-    config = OmegaConf.load(config_path)
-    return OmegaConf.merge(config, OmegaConf.structured(config_type, config))
-
-DEFAULT_FORMAT_PROMPT: FormatPrompt = (
-    lambda schema: f" You need to generate a JSON object that matches the schema below.  Do not include the schema in the output and DIRECTLY return the JSON object without any additional information.  The schema is: {dumps(schema)}"
-)
+def detect_none(value: Optional[float]) -> str:
+    if value is None:
+        return "n/a"
+    return f"{value:.2f}"

@@ -5,9 +5,8 @@ from typing import List, Tuple, Optional
 from ipaddress import IPv4Address, IPv6Address
 from jsonschema import Draft202012Validator, FormatChecker, ValidationError, SchemaError
 
-from core.utils import safe_divide
-from core.types import Schema, CompileStatusCode
-from core.engine import GenerationResult, PerfMetrics
+from core.utils import safe_divide, median, detect_none
+from core.types import Schema, CompileStatusCode, GenerationResult, PerfMetrics
 
 
 def is_json_schema_valid(schema: Schema):
@@ -45,23 +44,6 @@ def validate_json_schema(instance: Schema, schema: Schema) -> bool:
     except ValidationError:
         return False
     return True
-
-
-def median(values: List[float]) -> float:
-    if len(values) == 0:
-        return None
-    sorted_values = sorted(values)
-    n = len(sorted_values)
-    if n % 2 == 0:
-        return (sorted_values[n // 2 - 1] + sorted_values[n // 2]) / 2
-    else:
-        return sorted_values[n // 2]
-
-
-def detect_none(value: Optional[float]) -> str:
-    if value is None:
-        return "n/a"
-    return f"{value:.2f}"
 
 
 def evaluate(
