@@ -145,18 +145,12 @@ class XGrammarEngine(Engine[XGrammarConfig]):
 
         output_text = generated_texts[0] if generated_texts else ""
 
-        generated_tokens = []
-        if output_text:
-            token_ids = self.encode(output_text)
-            for token_id in token_ids:
-                token_text = self.tokenizer.decode([token_id])
-                generated_tokens.append({"id": token_id, "text": token_text})
-
         if timing_processor.timestamps:
             metadata.first_token_arrival_time = timing_processor.timestamps[0]
 
         token_usage = TokenUsage(
-            input_tokens=input_length, output_tokens=len(generated_tokens)
+            input_tokens=self.count_tokens(prompt),
+            output_tokens=self.count_tokens(output_text),
         )
 
         return GenerationResult(
@@ -165,7 +159,6 @@ class XGrammarEngine(Engine[XGrammarConfig]):
             json_schema=schema,
             token_usage=token_usage,
             metadata=metadata,
-            generated_tokens=generated_tokens,
         )
 
     def encode(self, text: str) -> List[int]:

@@ -8,6 +8,7 @@ from core.registry import register_engine
 from engines.llama_cpp import LlamaCppConfig
 from core.engine import Engine, EngineConfig, GenerationResult
 from core.types import (
+    Token,
     Schema,
     TokenUsage,
     GenerationMetadata,
@@ -69,13 +70,17 @@ class OutlinesEngine(Engine[OutlinesConfig]):
                         stop_at="```\n",
                     )
 
-                    tokens = []
+                    tokens_str = []
                     for i, token in enumerate(token_iterator):
                         if i == 0:
                             metadata.first_token_arrival_time = time()
-                        tokens.append(token)
+                        tokens_str.append(token)
 
-                    output = "".join(tokens)
+                    output = "".join(tokens_str)
+                    tokens_ids = [
+                        self.convert_token_to_id(token) for token in tokens_str
+                    ]
+
                     metadata.decoding_status = DecodingStatus(
                         code=DecodingStatusCode.OK
                     )
@@ -106,6 +111,9 @@ class OutlinesEngine(Engine[OutlinesConfig]):
             json_schema=schema,
             token_usage=token_usage,
             metadata=metadata,
+            generated_tokens=[
+                Token(id=id, text=token) for id, token in zip(tokens_ids, tokens_str)
+            ],
         )
 
     def _compile_grammar(

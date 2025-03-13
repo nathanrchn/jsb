@@ -56,8 +56,6 @@ class OpenAIEngine(Engine[OpenAIConfig]):
                     "json_schema": {"schema": schema, "name": "json_schema"},
                 },
                 stream=True,
-                # logprobs=True,
-                # top_logprobs=20,
                 temperature=self.config.temperature,
                 max_tokens=self.config.max_tokens,
                 stream_options={"include_usage": True},
@@ -73,8 +71,6 @@ class OpenAIEngine(Engine[OpenAIConfig]):
             )
 
         tokens_str: List[str] = []
-        logprobs: List[float] = []
-        top_tokens: List[List[Token]] = []
 
         for i, chunk in enumerate(response):
             if i == 0:
@@ -105,10 +101,8 @@ class OpenAIEngine(Engine[OpenAIConfig]):
             input=prompt,
             output="".join(tokens_str),
             generated_tokens=[
-                Token(id=id, text=token, logprob=logprob)
-                for id, token, logprob in zip(tokens_ids, tokens_str, logprobs)
+                Token(id=id, text=token) for id, token in zip(tokens_ids, tokens_str)
             ],
-            top_tokens=top_tokens,
             metadata=metadata,
             token_usage=usage,
         )

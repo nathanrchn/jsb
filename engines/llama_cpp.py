@@ -92,15 +92,12 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
                     generator = self.model.create_chat_completion(
                         messages=[{"role": "user", "content": prompt}],
                         stream=True,
-                        logprobs=True,
                         grammar=grammar,
                         temperature=self.config.temperature,
                         max_tokens=self.config.max_tokens,
                     )
 
                     tokens_str = []
-                    generated_tokens = []
-
                     for i, chunk in enumerate(generator):
                         if i == 0:
                             metadata.first_token_arrival_time = time.time()
@@ -115,23 +112,11 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
                         if chunk_content:
                             tokens_str.append(chunk_content)
 
-                            if "logprobs" in chunk["choices"][0]:
-                                logprob_info = chunk["choices"][0]["logprobs"]
-                                if logprob_info and "token_logprobs" in logprob_info:
-                                    for j, token_text in enumerate(
-                                        logprob_info["tokens"]
-                                    ):
-                                        token_id = self.convert_token_to_id(token_text)
-                                        logprob = logprob_info["token_logprobs"][j]
-                                        generated_tokens.append(
-                                            Token(
-                                                id=token_id,
-                                                text=token_text,
-                                                logprob=logprob,
-                                            )
-                                        )
-
                     generation = "".join(tokens_str)
+                    tokens_ids = [
+                        self.convert_token_to_id(token) for token in tokens_str
+                    ]
+
                     metadata.decoding_status = DecodingStatus(
                         code=DecodingStatusCode.OK
                     )
@@ -149,10 +134,10 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
             )
             return GenerationResult(input=prompt, output="", metadata=metadata)
 
-        input_tokens = len(self.encode(prompt))
-        output_tokens = len(self.encode(generation)) if generation else 0
-
-        token_usage = TokenUsage(input_tokens=input_tokens, output_tokens=output_tokens)
+        token_usage = TokenUsage(
+            input_tokens=self.count_tokens(prompt),
+            output_tokens=self.count_tokens(generation),
+        )
 
         self.model.reset()
 
@@ -162,7 +147,9 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
             json_schema=schema,
             token_usage=token_usage,
             metadata=metadata,
-            generated_tokens=generated_tokens,
+            generated_tokens=[
+                Token(id=id, text=token) for id, token in zip(tokens_ids, tokens_str)
+            ],
         )
 
     def _check_grammar_safety(self, grammar: "LlamaGrammar") -> Dict[str, Any]:

@@ -1,7 +1,7 @@
 from enum import Enum
-from json import dumps
+from uuid import uuid4
 from dataclasses import dataclass, field
-from typing import Any, Dict, Callable, Optional
+from typing import List, Dict, Any, Callable, Optional
 
 from core.utils import safe_divide, safe_subtract
 
@@ -112,3 +112,15 @@ class PerfMetrics:
             gct=gct,
             prft=prft,
         )
+
+
+@dataclass
+class GenerationResult:
+    input: str
+    output: str
+    json_schema: Optional[Schema] = None
+    id: str = field(default_factory=lambda: str(uuid4()))
+    generated_tokens: List[Token] = field(default_factory=list)
+    token_usage: TokenUsage = field(default_factory=TokenUsage)
+    perf_metrics: PerfMetrics = field(default_factory=PerfMetrics)
+    metadata: GenerationMetadata = field(default_factory=GenerationMetadata)

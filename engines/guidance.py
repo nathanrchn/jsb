@@ -111,10 +111,10 @@ class GuidanceEngine(Engine[GuidanceConfig]):
             )
             generation = ""
 
-        input_tokens = len(self.encode(prompt))
-        output_tokens = len(self.encode(generation)) if generation else 0
-
-        token_usage = TokenUsage(input_tokens=input_tokens, output_tokens=output_tokens)
+        token_usage = TokenUsage(
+            input_tokens=self.count_tokens(prompt),
+            output_tokens=self.count_tokens(generation),
+        )
 
         self.guidance_model_state.engine.model_obj.reset()
 

@@ -1,14 +1,11 @@
-from uuid import uuid4
+from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from typing import List, Optional, TypeVar, Generic
 
 from core.types import (
-    Token,
     Schema,
     TokenUsage,
-    PerfMetrics,
-    GenerationMetadata,
+    GenerationResult,
 )
 from core.profile import profile_generation
 
@@ -19,20 +16,6 @@ class EngineConfig:
 
 
 T = TypeVar("T", bound=EngineConfig)
-
-
-@dataclass
-class GenerationResult:
-    input: str
-    output: str
-    label: Optional[str] = None
-    json_schema: Optional[Schema] = None
-    id: str = field(default_factory=lambda: str(uuid4()))
-    generated_tokens: List[Token] = field(default_factory=list)
-    top_tokens: List[List[Token]] = field(default_factory=list)
-    token_usage: TokenUsage = field(default_factory=TokenUsage)
-    perf_metrics: PerfMetrics = field(default_factory=PerfMetrics)
-    metadata: GenerationMetadata = field(default_factory=GenerationMetadata)
 
 
 class Engine(ABC, Generic[T]):
