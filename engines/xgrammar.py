@@ -178,29 +178,29 @@ class XGrammarEngine(Engine[XGrammarConfig]):
     @property
     def max_context_length(self) -> int:
         return self.tokenizer.model_max_length
-    
+
 
 def add_triton_environment_variable():
     import os
     import subprocess
-    
+
     try:
         result = subprocess.run(
             ["find", "/usr", "-name", "libcuda.so"],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
-        
+
         paths = result.stdout.strip().split("\n")
-        
+
         if paths and paths[0]:
             libcuda_dir = os.path.dirname(paths[0])
             os.environ["TRITON_LIBCUDA_PATH"] = libcuda_dir
             print(f"Set TRITON_LIBCUDA_PATH to {libcuda_dir}")
         else:
             print("No libcuda.so found in /usr")
-    
+
     except Exception as e:
         print(f"Error setting TRITON_LIBCUDA_PATH: {e}")
 
