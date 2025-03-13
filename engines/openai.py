@@ -5,8 +5,8 @@ from typing import Dict, Any, List, Optional
 
 from core.registry import register_engine
 from core.evaluator import is_json_schema_valid
-from api.engine import Engine, EngineConfig, GenerationResult
-from core.custom_types import (
+from core.engine import Engine, EngineConfig, GenerationResult
+from core.types import (
     TokenUsage,
     Token,
     GenerationMetadata,

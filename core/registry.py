@@ -1,7 +1,7 @@
 from typing import Dict, Type, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from api.engine import Engine, EngineConfig
+    from core.engine import Engine, EngineConfig
 
 ENGINE_TO_CLASS: Dict[str, Type["Engine"]] = {}
 ENGINE_TO_CONFIG: Dict[str, Type["EngineConfig"]] = {}

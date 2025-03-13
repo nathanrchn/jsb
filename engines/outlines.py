@@ -4,11 +4,11 @@ from json import dumps
 from dataclasses import dataclass
 from typing import List, Optional, TYPE_CHECKING
 
-from api.base import Schema
 from core.registry import register_engine
 from engines.llama_cpp import LlamaCppConfig
-from api.engine import Engine, EngineConfig, GenerationResult
-from core.custom_types import (
+from core.engine import Engine, EngineConfig, GenerationResult
+from core.types import (
+    Schema,
     TokenUsage,
     GenerationMetadata,
     CompileStatus,

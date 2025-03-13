@@ -5,10 +5,9 @@ from typing import List, Tuple, Optional
 from ipaddress import IPv4Address, IPv6Address
 from jsonschema import Draft202012Validator, FormatChecker, ValidationError, SchemaError
 
-from api.base import Schema
 from core.utils import safe_divide
-from core.custom_types import CompileStatusCode
-from api.engine import GenerationResult, PerfMetrics
+from core.types import Schema, CompileStatusCode
+from core.engine import GenerationResult, PerfMetrics
 
 
 def is_json_schema_valid(schema: Schema):

@@ -1,7 +1,7 @@
 import os
 from typing import Optional, List
 
-from api.base import Schema
+from core.types import Schema
 from core.registry import register_engine
 from core.evaluator import is_json_schema_valid
 from engines.openai import OpenAIEngine, OpenAIConfig

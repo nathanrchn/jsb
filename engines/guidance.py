@@ -3,12 +3,12 @@ from time import time
 from typing import List, Optional
 from dataclasses import dataclass
 
-from api.base import Schema
 from core.registry import register_engine
 from engines.llama_cpp import LlamaCppConfig
 from core.evaluator import is_json_schema_valid
-from api.engine import Engine, EngineConfig, GenerationResult
-from core.custom_types import (
+from core.engine import Engine, EngineConfig, GenerationResult
+from core.types import (
+    Schema,
     TokenUsage,
     GenerationMetadata,
     CompileStatus,
@@ -116,7 +116,7 @@ class GuidanceEngine(Engine[GuidanceConfig]):
 
         token_usage = TokenUsage(input_tokens=input_tokens, output_tokens=output_tokens)
 
-        self.guidance_model_state.reset()
+        self.guidance_model_state.engine.model_obj.reset()
 
         return GenerationResult(
             input=prompt,

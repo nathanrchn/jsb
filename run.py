@@ -2,7 +2,6 @@ from argparse import ArgumentParser
 
 from core.bench import bench
 from core.utils import load_config
-from api.base import DEFAULT_FORMAT_PROMPT
 from core.registry import ENGINE_TO_CLASS, ENGINE_TO_CONFIG
 
 
@@ -18,4 +17,4 @@ if __name__ == "__main__":
         load_config(ENGINE_TO_CONFIG[args.engine], args.config)
     )
 
-    bench(engine, args.tasks.split(","), args.limit, DEFAULT_FORMAT_PROMPT)
+    bench(engine, args.tasks.split(","), args.limit)

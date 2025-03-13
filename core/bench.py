@@ -1,31 +1,32 @@
 from tqdm import tqdm
-from typing import List, Optional
-from argparse import ArgumentParser
+from typing import List, Optional, Union
 
-from api.engine import Engine
-from core.utils import load_config
-from api.dataset import Dataset, DatasetConfig
+from core.engine import Engine
+from core.types import FormatPrompt
+from core.prompts import DEFAULT_FORMAT_PROMPT
+from core.dataset import Dataset, DatasetConfig
 from core.evaluator import evaluate, print_scores
-from api.base import FormatPrompt, DEFAULT_FORMAT_PROMPT
-from core.registry import ENGINE_TO_CLASS, ENGINE_TO_CONFIG
 
 
 def bench(
     engine: Engine,
     tasks: List[str],
     limit: Optional[int] = None,
-    prompt_fn: FormatPrompt = DEFAULT_FORMAT_PROMPT,
+    prompt_fn: Union[FormatPrompt, List[FormatPrompt]] = DEFAULT_FORMAT_PROMPT,
     close_engine: bool = True,
 ) -> None:
     declared_coverage = []
     empirical_coverage = []
     perf_metrics = []
 
-    for task in tasks:
+    if isinstance(prompt_fn, FormatPrompt):
+        prompt_fn = [prompt_fn] * len(tasks)
+
+    for task, pf in zip(tasks, prompt_fn):
         task_results = []
         dataset = Dataset(DatasetConfig(task, limit=limit))
         for prompt, schema in tqdm(
-            dataset.iter(prompt_fn), total=limit or len(dataset), desc=task
+            dataset.iter(pf), total=limit or len(dataset), desc=task
         ):
             schema = engine.adapt_schema(schema)
             result = engine.generate(prompt, schema)

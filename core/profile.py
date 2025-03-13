@@ -2,10 +2,10 @@ from time import time
 from functools import wraps
 from typing import Callable, Dict, Any, TYPE_CHECKING
 
-from core.custom_types import PerfMetrics
+from core.types import PerfMetrics
 
 if TYPE_CHECKING:
-    from api.engine import Engine, GenerationResult
+    from core.engine import Engine, GenerationResult
 
 COMPILATION_TIMEOUT = 40
 GENERATION_TIMEOUT = 60

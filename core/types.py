@@ -1,8 +1,13 @@
 from enum import Enum
-from typing import Optional
+from json import dumps
 from dataclasses import dataclass, field
+from typing import Any, Dict, Callable, Optional
 
 from core.utils import safe_divide, safe_subtract
+
+
+Schema = Dict[str, Any]
+FormatPrompt = Callable[[Schema], str]
 
 
 class CompileStatusCode(Enum):

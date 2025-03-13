@@ -4,13 +4,12 @@ import stopit
 from json import dumps
 from dataclasses import dataclass
 from typing import List, Optional
-
 from transformers.generation import LogitsProcessor
 
-from api.base import Schema
 from core.registry import register_engine
-from api.engine import Engine, EngineConfig, GenerationResult
-from core.custom_types import (
+from core.engine import Engine, EngineConfig, GenerationResult
+from core.types import (
+    Schema,
     TokenUsage,
     GenerationMetadata,
     CompileStatus,
