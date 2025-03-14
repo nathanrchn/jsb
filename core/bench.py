@@ -22,7 +22,7 @@ def bench(
     empirical_coverage = []
     perf_metrics = []
 
-    if isinstance(prompt_fn, FormatPrompt):
+    if not isinstance(prompt_fn, list):
         prompt_fn = [prompt_fn] * len(tasks)
 
     all_results = []
