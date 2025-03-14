@@ -2,6 +2,7 @@ import os
 import sys
 from json import dumps
 from omegaconf import OmegaConf
+from contextlib import contextmanager
 from typing import List, Optional, TypeVar, Type, TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -51,9 +52,11 @@ def detect_none(value: Optional[float]) -> str:
         return "n/a"
     return f"{value:.2f}"
 
-def block_print():
+@contextmanager
+def disable_print():
+    stdout = sys.stdout
     sys.stdout = open(os.devnull, "w")
-
-
-def enable_print():
-    sys.stdout = sys.__stdout__
+    try:
+        yield
+    finally:
+        sys.stdout = stdout
