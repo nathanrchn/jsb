@@ -1,3 +1,5 @@
+import os
+import sys
 from json import dumps
 from omegaconf import OmegaConf
 from typing import List, Optional, TypeVar, Type
@@ -47,3 +49,10 @@ def detect_none(value: Optional[float]) -> str:
     if value is None:
         return "n/a"
     return f"{value:.2f}"
+
+def block_print():
+    sys.stdout = open(os.devnull, "w")
+
+
+def enable_print():
+    sys.stdout = sys.__stdout__

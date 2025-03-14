@@ -1,11 +1,12 @@
+import sys
 from tqdm import tqdm
 from typing import List, Optional, Union
 
 from core.engine import Engine
-from core.utils import DEFAULT_FORMAT_PROMPT
 from core.dataset import Dataset, DatasetConfig
 from core.evaluator import evaluate, print_scores
 from core.types import FormatPrompt, GenerationResult
+from core.utils import DEFAULT_FORMAT_PROMPT, block_print, enable_print
 
 
 def bench(
@@ -15,6 +16,8 @@ def bench(
     prompt_fn: Union[FormatPrompt, List[FormatPrompt]] = DEFAULT_FORMAT_PROMPT,
     close_engine: bool = True,
 ) -> List[List[GenerationResult]]:
+    block_print()
+
     declared_coverage = []
     empirical_coverage = []
     perf_metrics = []
@@ -27,7 +30,7 @@ def bench(
         task_results = []
         dataset = Dataset(DatasetConfig(task, limit=limit))
         for prompt, schema in tqdm(
-            dataset.iter(pf), total=limit or len(dataset), desc=task
+            dataset.iter(pf), total=limit or len(dataset), desc=task, file=sys.stdout
         ):
             schema = engine.adapt_schema(schema)
             result = engine.generate(prompt, schema)
@@ -37,6 +40,8 @@ def bench(
         empirical_coverage.append(ec)
         perf_metrics.append(pm)
         all_results.append(task_results)
+
+    enable_print()
 
     print_scores(declared_coverage, empirical_coverage, perf_metrics, tasks)
     print(engine.total_usage)
