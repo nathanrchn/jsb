@@ -55,8 +55,11 @@ def detect_none(value: Optional[float]) -> str:
 @contextmanager
 def disable_print():
     stdout = sys.stdout
+    stderr = sys.stderr
     sys.stdout = open(os.devnull, "w")
+    sys.stderr = open(os.devnull, "w")
     try:
         yield
     finally:
         sys.stdout = stdout
+        sys.stderr = stderr
