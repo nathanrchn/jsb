@@ -115,7 +115,7 @@ class XGrammarEngine(Engine[XGrammarConfig]):
                             if self.config.temperature > 0
                             else None,
                             do_sample=self.config.temperature > 0,
-                            stop_strings=["```:"],
+                            pad_token_id=self.tokenizer.eos_token_id,
                         ),
                         attention_mask=model_input["attention_mask"],
                         tokenizer=self.tokenizer,
