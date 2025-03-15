@@ -38,7 +38,7 @@ class TimingLogitsProcessor(LogitsProcessor):
 class XGrammarConfig(EngineConfig):
     model: str
     temperature: float = 0
-    max_tokens: Optional[int] = None
+    max_tokens: Optional[int] = 4096
     grammar_cache_enabled: bool = False
 
 
@@ -64,7 +64,6 @@ class XGrammarEngine(Engine[XGrammarConfig]):
 
     def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
         from transformers.generation import GenerationConfig
-        from transformers.generation.utils import ModelOutput
         from xgrammar.contrib.hf import LogitsProcessor as XGrammarLogitsProcessor
 
         metadata = GenerationMetadata()
@@ -108,7 +107,7 @@ class XGrammarEngine(Engine[XGrammarConfig]):
         try:
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
-                    model_output: ModelOutput = self.model.generate(
+                    model_output = self.model.generate(
                         model_input["input_ids"],
                         generation_config=GenerationConfig(
                             max_new_tokens=self.config.max_tokens,
@@ -116,7 +115,6 @@ class XGrammarEngine(Engine[XGrammarConfig]):
                             if self.config.temperature > 0
                             else None,
                             do_sample=self.config.temperature > 0,
-                            return_dict_in_generate=True,
                             stop_strings=["```:"],
                         ),
                         attention_mask=model_input["attention_mask"],
@@ -138,7 +136,6 @@ class XGrammarEngine(Engine[XGrammarConfig]):
                 return GenerationResult(input=prompt, output="", metadata=metadata)
 
         except Exception as e:
-            print(e)
             metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
