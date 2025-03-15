@@ -3,7 +3,7 @@ import sys
 from json import dumps
 from omegaconf import OmegaConf
 from contextlib import contextmanager
-from typing import List, Optional, TypeVar, Type, TYPE_CHECKING, Any
+from typing import List, Optional, TypeVar, Type, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from core.types import FormatPrompt
@@ -51,6 +51,7 @@ def detect_none(value: Optional[float]) -> str:
     if value is None:
         return "n/a"
     return f"{value:.2f}"
+
 
 @contextmanager
 def disable_print():

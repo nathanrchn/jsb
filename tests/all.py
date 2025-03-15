@@ -48,7 +48,7 @@ bench(
 
 # xgrammar
 xgrammar_engine = XGrammarEngine(
-    XGrammarConfig(model="bartowski/Llama-3.2-1B-Instruct-GGUF")
+    XGrammarConfig(model="meta-llama/Llama-3.2-1B-Instruct")
 )
 bench(
     xgrammar_engine,
