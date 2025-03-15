@@ -8,7 +8,7 @@ from engines.llama_cpp import LlamaCppEngine, LlamaCppConfig
 guidance_engine = GuidanceEngine(
     GuidanceConfig(
         model_engine_config=LlamaCppConfig(
-            model="bartowski/Llama-3.2-1B-Instruct-GGUF", filename="*Q8_0.gguf"
+            model="bartowski/Llama-3.2-1B-Instruct-GGUF", filename="*f16.gguf"
         )
     )
 )
@@ -21,7 +21,7 @@ bench(
 
 # llama_cpp
 llama_cpp_engine = LlamaCppEngine(
-    LlamaCppConfig(model="bartowski/Llama-3.2-1B-Instruct-GGUF", filename="*Q8_0.gguf")
+    LlamaCppConfig(model="bartowski/Llama-3.2-1B-Instruct-GGUF", filename="*f16.gguf")
 )
 bench(
     llama_cpp_engine,
@@ -34,9 +34,9 @@ bench(
 outlines_engine = OutlinesEngine(
     OutlinesConfig(
         model_engine_config=LlamaCppConfig(
-            model="bartowski/google_gemma-3-1b-it-GGUF", filename="*Q8_0.gguf"
+            model="bartowski/Llama-3.2-1B-Instruct-GGUF", filename="*f16.gguf"
         ),
-        hf_tokenizer_id="google/gemma-3-1b-it",
+        hf_tokenizer_id="meta-llama/Llama-3.2-1B-Instruct",
     )
 )
 bench(
