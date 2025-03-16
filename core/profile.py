@@ -12,14 +12,14 @@ GENERATION_TIMEOUT = 60
 
 
 def profile_generation(
-    generate: Callable[["Engine", str, Dict[str, Any]], "GenerationResult"],
-) -> Callable[["Engine", str, Dict[str, Any]], "GenerationResult"]:
+    generate: Callable[["Engine", str, Dict[str, Any], str], "GenerationResult"],
+) -> Callable[["Engine", str, Dict[str, Any], str], "GenerationResult"]:
     @wraps(generate)
     def wrapper(
-        engine: "Engine", prompt: str, schema: Dict[str, Any]
+        engine: "Engine", prompt: str, schema: Dict[str, Any], task: str
     ) -> "GenerationResult":
         gen_start_time: float = time()
-        result: "GenerationResult" = generate(engine, prompt, schema)
+        result: "GenerationResult" = generate(engine, prompt, schema, task)
         gen_end_time: float = time()
 
         perf_metrics: PerfMetrics = PerfMetrics.from_timestamps(

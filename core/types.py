@@ -10,7 +10,7 @@ Schema = Dict[str, Any]
 FormatPrompt = Callable[[Schema], str]
 
 
-class CompileStatusCode(Enum):
+class CompileStatusCode(int, Enum):
     TBD = -1
     OK = 0
     UNSUPPORTED_SCHEMA = 1
@@ -22,7 +22,7 @@ class CompileStatusCode(Enum):
     UNKOWN_ERROR = 7
 
 
-class DecodingStatusCode(Enum):
+class DecodingStatusCode(int, Enum):
     TBD = -1
     OK = 0
     EXCEEDING_MAX_CTX = 1
@@ -67,7 +67,6 @@ class Token:
     id: Optional[int] = None
     text: Optional[str] = None
     logprob: Optional[float] = None
-    unmasked_logprob: Optional[float] = None
 
 
 @dataclass

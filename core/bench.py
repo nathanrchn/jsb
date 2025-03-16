@@ -2,6 +2,7 @@ import os
 import sys
 from tqdm import tqdm
 from json import dumps
+from dataclasses import asdict
 from typing import List, Optional, Union
 
 from core.engine import Engine
@@ -21,9 +22,9 @@ def bench(
 ) -> List[List[GenerationResult]]:
     id = nanoid()
 
+    perf_metrics = []
     declared_coverage = []
     empirical_coverage = []
-    perf_metrics = []
 
     if not isinstance(prompt_fn, list):
         prompt_fn = [prompt_fn] * len(tasks)
@@ -56,8 +57,9 @@ def bench(
             os.makedirs("results")
 
         with open(f"results/{id}.jsonl", "w") as f:
-            for result in all_results:
-                f.write(dumps(result))
+            for results in all_results:
+                for result in results:
+                    f.write(dumps(asdict(result)))
 
         print(f"Results saved to results/{id}.jsonl")
 

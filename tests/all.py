@@ -66,7 +66,6 @@ bench(
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
     limit=100,
     close_engine=True,
-    save_results=True,
 )
 
 # xgrammar
