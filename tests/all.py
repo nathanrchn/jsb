@@ -1,8 +1,30 @@
 from core.bench import bench
+from engines.gemini import GeminiEngine
+from engines.openai import OpenAIEngine, OpenAIConfig
 from engines.guidance import GuidanceEngine, GuidanceConfig
 from engines.outlines import OutlinesEngine, OutlinesConfig
 from engines.xgrammar import XGrammarEngine, XGrammarConfig
 from engines.llama_cpp import LlamaCppEngine, LlamaCppConfig
+
+# openai
+openai_engine = OpenAIEngine(
+    OpenAIConfig(model="gpt-4o-mini")
+)
+bench(
+    openai_engine,
+    ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
+    limit=100,
+)
+
+# gemini
+gemini_engine = GeminiEngine(
+    OpenAIConfig(model="models/gemini-2.0-flash-lite")
+)
+bench(
+    gemini_engine,
+    ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
+    limit=100,
+)
 
 # guidance
 guidance_engine = GuidanceEngine(
