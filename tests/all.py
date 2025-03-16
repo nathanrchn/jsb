@@ -7,9 +7,7 @@ from engines.xgrammar import XGrammarEngine, XGrammarConfig
 from engines.llama_cpp import LlamaCppEngine, LlamaCppConfig
 
 # openai
-openai_engine = OpenAIEngine(
-    OpenAIConfig(model="gpt-4o-mini")
-)
+openai_engine = OpenAIEngine(OpenAIConfig(model="gpt-4o-mini"))
 bench(
     openai_engine,
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
@@ -17,9 +15,7 @@ bench(
 )
 
 # gemini
-gemini_engine = GeminiEngine(
-    OpenAIConfig(model="models/gemini-2.0-flash-lite")
-)
+gemini_engine = GeminiEngine(OpenAIConfig(model="models/gemini-2.0-flash-lite"))
 bench(
     gemini_engine,
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],

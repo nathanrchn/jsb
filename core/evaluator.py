@@ -50,8 +50,6 @@ def evaluate(
     results: List[GenerationResult],
 ) -> Tuple[Optional[float], Optional[float], PerfMetrics]:
     declared_coverage = 0
-
-    empirical_total = 0
     empirical_coverage = 0
 
     for result in results:
@@ -63,7 +61,6 @@ def evaluate(
 
         if result.metadata.compile_status.code == CompileStatusCode.OK:
             declared_coverage += 1
-            empirical_total += 1
 
         try:
             json_object = loads(output)
@@ -98,7 +95,7 @@ def evaluate(
 
     return (
         safe_divide(declared_coverage, len(results)),
-        safe_divide(empirical_coverage, empirical_total),
+        safe_divide(empirical_coverage, declared_coverage),
         PerfMetrics(
             ttft=median(ttft_list),
             tpot=median(tpot_list),
