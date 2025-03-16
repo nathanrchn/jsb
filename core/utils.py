@@ -10,6 +10,9 @@ from typing import List, Optional, TypeVar, Type, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.types import FormatPrompt
 
+GENERATION_TIMEOUT = 60
+COMPILATION_TIMEOUT = 40
+
 
 T = TypeVar("T")
 
@@ -66,6 +69,7 @@ def disable_print():
     finally:
         sys.stdout = stdout
         sys.stderr = stderr
+
 
 def nanoid(length: int = 4) -> str:
     return "".join(random.choices(string.ascii_letters, k=length))

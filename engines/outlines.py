@@ -6,23 +6,22 @@ from typing import List, Optional, TYPE_CHECKING
 
 from core.registry import register_engine
 from engines.llama_cpp import LlamaCppConfig
-from core.engine import Engine, EngineConfig, GenerationResult
+from core.engine import Engine, EngineConfig
+from core.utils import COMPILATION_TIMEOUT, GENERATION_TIMEOUT
 from core.types import (
     Token,
     Schema,
     TokenUsage,
-    GenerationMetadata,
     CompileStatus,
-    CompileStatusCode,
     DecodingStatus,
+    GenerationState,
+    CompileStatusCode,
     DecodingStatusCode,
+    GenerationMetadata,
 )
 
 if TYPE_CHECKING:
     from outlines.generate.api import SequenceGeneratorAdapter
-
-COMPILATION_TIMEOUT = 30
-GENERATION_TIMEOUT = 60
 
 
 @dataclass
@@ -52,19 +51,23 @@ class OutlinesEngine(Engine[OutlinesConfig]):
             n_gpu_layers=self.config.model_engine_config.n_gpu_layers,
         )
 
-    def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
-        metadata = GenerationMetadata()
+    def _generate(self, state: GenerationState) -> None:
+        from outlines.caching import cache_disabled
 
-        generator = self._compile_grammar(schema, metadata)
+        with cache_disabled():
+            generator = self._compile_grammar(state.schema, state.metadata)
 
-        if metadata.compile_status.code != CompileStatusCode.OK or generator is None:
-            return GenerationResult(input=prompt, output="", metadata=metadata)
+        if (
+            state.metadata.compile_status.code != CompileStatusCode.OK
+            or generator is None
+        ):
+            return
 
         try:
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     token_iterator = generator.stream(
-                        prompt,
+                        state.input,
                         temperature=self.config.model_engine_config.temperature,
                         max_tokens=self.config.model_engine_config.max_tokens,
                         stop_at="```\n",
@@ -73,7 +76,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
                     tokens_str = []
                     for i, token in enumerate(token_iterator):
                         if i == 0:
-                            metadata.first_token_arrival_time = time()
+                            state.metadata.first_token_arrival_time = time()
                         tokens_str.append(token)
 
                     output = "".join(tokens_str)
@@ -81,40 +84,36 @@ class OutlinesEngine(Engine[OutlinesConfig]):
                         self.convert_token_to_id(token) for token in tokens_str
                     ]
 
-                    metadata.decoding_status = DecodingStatus(
+                    state.metadata.decoding_status = DecodingStatus(
                         code=DecodingStatusCode.OK
                     )
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
-                metadata.decoding_status = DecodingStatus(
+                state.metadata.decoding_status = DecodingStatus(
                     code=DecodingStatusCode.DECODING_TIMEOUT,
                     message="Generation timed out",
                 )
-                return GenerationResult(input=prompt, output="", metadata=metadata)
+                return
 
         except Exception as e:
-            metadata.decoding_status = DecodingStatus(
+            state.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
-            return GenerationResult(input=prompt, output="", metadata=metadata)
+            return
 
-        token_usage = TokenUsage(
-            input_tokens=self.count_tokens(prompt),
+        state.token_usage = TokenUsage(
+            input_tokens=self.count_tokens(state.input),
             output_tokens=self.count_tokens(output),
         )
 
+        state.output = output
+        state.generated_tokens = [
+            Token(id=id, text=token) for id, token in zip(tokens_ids, tokens_str)
+        ]
+
         self.model.model.reset()
 
-        return GenerationResult(
-            input=prompt,
-            output=output,
-            json_schema=schema,
-            token_usage=token_usage,
-            metadata=metadata,
-            generated_tokens=[
-                Token(id=id, text=token) for id, token in zip(tokens_ids, tokens_str)
-            ],
-        )
+        return
 
     def _compile_grammar(
         self, schema: Schema, metadata: GenerationMetadata
@@ -145,7 +144,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
                 )
                 return None
 
-        except Exception as e:
+        except BaseException as e:
             metadata.compile_status = CompileStatus(
                 code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
             )

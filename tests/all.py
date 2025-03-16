@@ -12,7 +12,7 @@ bench(
     openai_engine,
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
     limit=100,
-    save_results=True,
+    save_states=True,
 )
 
 # gemini
@@ -21,7 +21,7 @@ bench(
     gemini_engine,
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
     limit=100,
-    save_results=True,
+    save_states=True,
 )
 
 # guidance
@@ -37,7 +37,7 @@ bench(
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
     limit=100,
     close_engine=True,
-    save_results=True,
+    save_states=True,
 )
 
 # llama_cpp
@@ -49,7 +49,7 @@ bench(
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
     limit=100,
     close_engine=True,
-    save_results=True,
+    save_states=True,
 )
 
 # outlines
@@ -66,6 +66,7 @@ bench(
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
     limit=100,
     close_engine=True,
+    save_states=True,
 )
 
 # xgrammar
@@ -77,5 +78,5 @@ bench(
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
     limit=100,
     close_engine=True,
-    save_results=True,
+    save_states=True,
 )

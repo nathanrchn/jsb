@@ -5,21 +5,21 @@ from dataclasses import dataclass
 
 from core.registry import register_engine
 from engines.llama_cpp import LlamaCppConfig
+from core.engine import Engine, EngineConfig
 from core.evaluator import is_json_schema_valid
-from core.engine import Engine, EngineConfig, GenerationResult
 from core.types import (
     Schema,
     TokenUsage,
-    GenerationMetadata,
     CompileStatus,
-    CompileStatusCode,
     DecodingStatus,
+    GenerationState,
+    CompileStatusCode,
     DecodingStatusCode,
 )
 
 
-COMPILATION_TIMEOUT = 30
 GENERATION_TIMEOUT = 60
+COMPILATION_TIMEOUT = 30
 
 
 @dataclass
@@ -47,84 +47,78 @@ class GuidanceEngine(Engine[GuidanceConfig]):
 
         self.tokenizer = self.guidance_model_state.engine.tokenizer
 
-    def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
+    def _generate(self, state: GenerationState) -> None:
         from guidance import json as guidance_json
-
-        metadata = GenerationMetadata()
 
         try:
             with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     generation_op = guidance_json(
-                        schema=schema,
+                        schema=state.schema,
                         name="generated_object",
                         temperature=self.config.model_engine_config.temperature,
                         max_tokens=self.config.max_tokens,
                     )
-                    metadata.grammar_compilation_end_time = time()
-                    metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
+                    state.metadata.grammar_compilation_end_time = time()
+                    state.metadata.compile_status = CompileStatus(
+                        code=CompileStatusCode.OK
+                    )
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
-                metadata.compile_status = CompileStatus(
+                state.metadata.compile_status = CompileStatus(
                     code=CompileStatusCode.COMPILE_TIMEOUT,
                     message="Schema compilation timed out",
                 )
-                return GenerationResult(input=prompt, output="", metadata=metadata)
+                return
 
         except Exception as e:
-            metadata.compile_status = CompileStatus(
+            state.metadata.compile_status = CompileStatus(
                 code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
             )
-            return GenerationResult(input=prompt, output="", metadata=metadata)
+            return
 
         try:
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     state_iterator = (
-                        self.guidance_model_state.stream() + prompt + generation_op
+                        self.guidance_model_state.stream() + state.input + generation_op
                     )
                     for i, state in enumerate(state_iterator):
                         if i == 0:
-                            metadata.first_token_arrival_time = time()
+                            state.metadata.first_token_arrival_time = time()
                     final_state = state
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
-                metadata.decoding_status = DecodingStatus(
+                state.metadata.decoding_status = DecodingStatus(
                     code=DecodingStatusCode.DECODING_TIMEOUT,
                     message="Generation timed out",
                 )
-                return GenerationResult(input=prompt, output="", metadata=metadata)
+                return
 
         except Exception as e:
-            metadata.decoding_status = DecodingStatus(
+            state.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
-            return GenerationResult(input=prompt, output="", metadata=metadata)
+            return
 
         try:
             generation = final_state["generated_object"]
-            metadata.decoding_status = DecodingStatus(code=DecodingStatusCode.OK)
+            state.metadata.decoding_status = DecodingStatus(code=DecodingStatusCode.OK)
         except KeyError:
-            metadata.decoding_status = DecodingStatus(
+            state.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR,
                 message="Failed to extract generated object",
             )
             generation = ""
 
-        token_usage = TokenUsage(
-            input_tokens=self.count_tokens(prompt),
+        state.output = generation
+        state.token_usage = TokenUsage(
+            input_tokens=self.count_tokens(state.input),
             output_tokens=self.count_tokens(generation),
         )
 
         self.guidance_model_state.engine.model_obj.reset()
-
-        return GenerationResult(
-            input=prompt,
-            output=generation,
-            json_schema=schema,
-            token_usage=token_usage,
-            metadata=metadata,
-        )
+        return
 
     def encode(self, text: str) -> Optional[List[int]]:
         return self.tokenizer.encode(text.encode("utf-8"))

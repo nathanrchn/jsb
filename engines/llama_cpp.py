@@ -6,23 +6,20 @@ from dataclasses import dataclass
 from typing import List, Dict, Any, Optional, TYPE_CHECKING
 
 from core.registry import register_engine
-from core.engine import Engine, EngineConfig, GenerationResult
+from core.engine import Engine, EngineConfig
+from core.utils import COMPILATION_TIMEOUT, GENERATION_TIMEOUT
 from core.types import (
-    Schema,
-    TokenUsage,
-    GenerationMetadata,
-    CompileStatus,
-    CompileStatusCode,
-    DecodingStatus,
-    DecodingStatusCode,
     Token,
+    TokenUsage,
+    CompileStatus,
+    DecodingStatus,
+    GenerationState,
+    CompileStatusCode,
+    DecodingStatusCode,
 )
 
 if TYPE_CHECKING:
     from llama_cpp.llama_grammar import LlamaGrammar
-
-COMPILATION_TIMEOUT = 30
-GENERATION_TIMEOUT = 60
 
 
 @dataclass
@@ -50,47 +47,47 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
             n_gpu_layers=self.config.n_gpu_layers,
         )
 
-    def _generate(self, prompt: str, schema: Schema) -> GenerationResult:
+    def _generate(self, state: GenerationState) -> None:
         from llama_cpp.llama_grammar import LlamaGrammar
-
-        metadata = GenerationMetadata()
 
         grammar = None
         try:
             with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     grammar = LlamaGrammar.from_json_schema(
-                        dumps(schema), verbose=False
+                        dumps(state.schema), verbose=False
                     )
-                    metadata.grammar_compilation_end_time = time.time()
-                    metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
+                    state.metadata.grammar_compilation_end_time = time.time()
+                    state.metadata.compile_status = CompileStatus(
+                        code=CompileStatusCode.OK
+                    )
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
-                metadata.compile_status = CompileStatus(
+                state.metadata.compile_status = CompileStatus(
                     code=CompileStatusCode.COMPILE_TIMEOUT,
                     message="Grammar compilation timed out",
                 )
-                return GenerationResult(input=prompt, output="", metadata=metadata)
+                return
 
             segfault_check = self._check_grammar_safety(grammar)
             if not segfault_check["success"]:
-                metadata.compile_status = CompileStatus(
+                state.metadata.compile_status = CompileStatus(
                     code=CompileStatusCode.UNSUPPORTED_SCHEMA,
                     message=f"Failed to add grammar to sampler: {segfault_check}",
                 )
-                return GenerationResult(input=prompt, output="", metadata=metadata)
+                return
 
         except Exception as e:
-            metadata.compile_status = CompileStatus(
+            state.metadata.compile_status = CompileStatus(
                 code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
             )
-            return GenerationResult(input=prompt, output="", metadata=metadata)
+            return
 
         try:
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     generator = self.model.create_chat_completion(
-                        messages=[{"role": "user", "content": prompt}],
+                        messages=[{"role": "user", "content": state.input}],
                         stream=True,
                         grammar=grammar,
                         temperature=self.config.temperature,
@@ -100,7 +97,7 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
                     tokens_str = []
                     for i, chunk in enumerate(generator):
                         if i == 0:
-                            metadata.first_token_arrival_time = time.time()
+                            state.metadata.first_token_arrival_time = time.time()
 
                         if (
                             len(chunk["choices"]) == 0
@@ -117,40 +114,35 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
                         self.convert_token_to_id(token) for token in tokens_str
                     ]
 
-                    metadata.decoding_status = DecodingStatus(
+                    state.metadata.decoding_status = DecodingStatus(
                         code=DecodingStatusCode.OK
                     )
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
-                metadata.decoding_status = DecodingStatus(
+                state.metadata.decoding_status = DecodingStatus(
                     code=DecodingStatusCode.DECODING_TIMEOUT,
                     message="Generation timed out",
                 )
-                return GenerationResult(input=prompt, output="", metadata=metadata)
+                return
 
         except Exception as e:
-            metadata.decoding_status = DecodingStatus(
+            state.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
-            return GenerationResult(input=prompt, output="", metadata=metadata)
+            return
 
-        token_usage = TokenUsage(
-            input_tokens=self.count_tokens(prompt),
+        state.token_usage = TokenUsage(
+            input_tokens=self.count_tokens(state.input),
             output_tokens=self.count_tokens(generation),
         )
 
         self.model.reset()
+        state.output = generation
+        state.generated_tokens = [
+            Token(id=id, text=token) for id, token in zip(tokens_ids, tokens_str)
+        ]
 
-        return GenerationResult(
-            input=prompt,
-            output=generation,
-            json_schema=schema,
-            token_usage=token_usage,
-            metadata=metadata,
-            generated_tokens=[
-                Token(id=id, text=token) for id, token in zip(tokens_ids, tokens_str)
-            ],
-        )
+        return
 
     def _check_grammar_safety(self, grammar: "LlamaGrammar") -> Dict[str, Any]:
         def child_process():

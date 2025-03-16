@@ -71,7 +71,6 @@ class Token:
 
 @dataclass
 class GenerationMetadata:
-    system_fingerprint: Optional[str] = None
     first_token_arrival_time: Optional[float] = None
     grammar_compilation_end_time: Optional[float] = None
     compile_status: Optional[CompileStatus] = field(default_factory=CompileStatus)
@@ -114,11 +113,11 @@ class PerfMetrics:
 
 
 @dataclass
-class GenerationResult:
+class GenerationState:
+    task: str
     input: str
     output: str
-    task: str = ""
-    json_schema: Optional[Schema] = None
+    schema: Schema
     id: str = field(default_factory=lambda: str(uuid4()))
     generated_tokens: List[Token] = field(default_factory=list)
     token_usage: TokenUsage = field(default_factory=TokenUsage)

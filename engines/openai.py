@@ -4,12 +4,12 @@ from dataclasses import dataclass
 from typing import Dict, Any, List, Optional
 
 from core.registry import register_engine
+from core.engine import Engine, EngineConfig
 from core.evaluator import is_json_schema_valid
-from core.engine import Engine, EngineConfig, GenerationResult
 from core.types import (
     TokenUsage,
     Token,
-    GenerationMetadata,
+    GenerationState,
     CompileStatus,
     DecodingStatus,
     CompileStatusCode,
@@ -44,16 +44,14 @@ class OpenAIEngine(Engine[OpenAIConfig]):
             encoding_for_model(self.config.model) if base_url is None else None
         )
 
-    def _generate(self, prompt: str, schema: Dict[str, Any]) -> GenerationResult:
-        metadata = GenerationMetadata()
-
+    def _generate(self, state: GenerationState) -> None:
         try:
             response = self.client.chat.completions.create(
                 model=self.config.model,
-                messages=[{"role": "user", "content": prompt}],
+                messages=[{"role": "user", "content": state.input}],
                 response_format={
                     "type": "json_schema",
-                    "json_schema": {"schema": schema, "name": "json_schema"},
+                    "json_schema": {"schema": state.schema, "name": "json_schema"},
                 },
                 stream=True,
                 temperature=self.config.temperature,
@@ -61,17 +59,12 @@ class OpenAIEngine(Engine[OpenAIConfig]):
                 stream_options={"include_usage": True},
             )
         except Exception as e:
-            metadata.compile_status = CompileStatus(
+            state.metadata.compile_status = CompileStatus(
                 code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
             )
-            return GenerationResult(
-                input=prompt,
-                output="",
-                metadata=metadata,
-            )
+            return
 
         tokens_str: List[str] = []
-
         for i, chunk in enumerate(response):
             if i == 0:
                 first_token_arrival_time = time()
@@ -90,24 +83,18 @@ class OpenAIEngine(Engine[OpenAIConfig]):
             output_tokens=chunk.usage.completion_tokens,
         )
 
-        metadata.system_fingerprint = chunk.system_fingerprint
-        metadata.first_token_arrival_time = first_token_arrival_time
-        metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
-        metadata.decoding_status = DecodingStatus(code=DecodingStatusCode.OK)
+        state.metadata.first_token_arrival_time = first_token_arrival_time
+        state.metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
+        state.metadata.decoding_status = DecodingStatus(code=DecodingStatusCode.OK)
 
         tokens_ids = [self.convert_token_to_id(token) for token in tokens_str]
 
-        result = GenerationResult(
-            input=prompt,
-            output="".join(tokens_str),
-            generated_tokens=[
-                Token(id=id, text=token) for id, token in zip(tokens_ids, tokens_str)
-            ],
-            metadata=metadata,
-            token_usage=usage,
-        )
-
-        return result
+        state.output = "".join(tokens_str)
+        state.generated_tokens = [
+            Token(id=id, text=token) for id, token in zip(tokens_ids, tokens_str)
+        ]
+        state.token_usage = usage
+        return
 
     def adapt_schema(self, schema: Dict[str, Any]) -> Dict[str, Any]:
         recursively_set_additional_properties_false(schema)

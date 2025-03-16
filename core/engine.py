@@ -5,7 +5,7 @@ from typing import List, Optional, TypeVar, Generic
 from core.types import (
     Schema,
     TokenUsage,
-    GenerationResult,
+    GenerationState,
 )
 from core.profile import profile_generation
 
@@ -26,24 +26,22 @@ class Engine(ABC, Generic[T]):
     @profile_generation
     def generate(
         self,
+        task: str,
         prompt: str,
         schema: Schema,
-        task: str,
-    ) -> GenerationResult:
+    ) -> GenerationState:
         schema = self.adapt_schema(schema)
-        result = self._generate(prompt, schema)
+        state = GenerationState(task=task, input=prompt, output="", schema=schema)
+        self._generate(state)
 
-        self.total_usage += result.token_usage
-        result.json_schema = schema
-        result.task = task
-        return result
+        self.total_usage += state.token_usage
+        return state
 
     @abstractmethod
     def _generate(
         self,
-        prompt: str,
-        schema: Schema,
-    ) -> GenerationResult:
+        state: GenerationState,
+    ) -> None:
         raise NotImplementedError
 
     @property
