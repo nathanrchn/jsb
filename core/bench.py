@@ -1,12 +1,14 @@
+import os
 import sys
 from tqdm import tqdm
+from json import dumps
 from typing import List, Optional, Union
 
 from core.engine import Engine
 from core.dataset import Dataset, DatasetConfig
 from core.evaluator import evaluate, print_scores
 from core.types import FormatPrompt, GenerationResult
-from core.utils import DEFAULT_FORMAT_PROMPT, disable_print
+from core.utils import DEFAULT_FORMAT_PROMPT, disable_print, nanoid
 
 
 def bench(
@@ -15,7 +17,10 @@ def bench(
     limit: Optional[int] = None,
     prompt_fn: Union[FormatPrompt, List[FormatPrompt]] = DEFAULT_FORMAT_PROMPT,
     close_engine: bool = True,
+    save_results: bool = False,
 ) -> List[List[GenerationResult]]:
+    id = nanoid()
+
     declared_coverage = []
     empirical_coverage = []
     perf_metrics = []
@@ -32,7 +37,7 @@ def bench(
         ):
             with disable_print():
                 schema = engine.adapt_schema(schema)
-                result = engine.generate(prompt, schema)
+                result = engine.generate(prompt, schema, task)
                 task_results.append(result)
         dc, ec, pm = evaluate(task_results)
         declared_coverage.append(dc)
@@ -45,5 +50,15 @@ def bench(
 
     if close_engine:
         engine.close()
+
+    if save_results:
+        if not os.path.exists("results"):
+            os.makedirs("results")
+
+        with open(f"results/{id}.jsonl", "w") as f:
+            for result in all_results:
+                f.write(dumps(result))
+
+        print(f"Results saved to results/{id}.jsonl")
 
     return all_results

@@ -1,5 +1,7 @@
 import os
 import sys
+import random
+import string
 from json import dumps
 from omegaconf import OmegaConf
 from contextlib import contextmanager
@@ -64,3 +66,6 @@ def disable_print():
     finally:
         sys.stdout = stdout
         sys.stderr = stderr
+
+def nanoid(length: int = 4) -> str:
+    return "".join(random.choices(string.ascii_letters, k=length))

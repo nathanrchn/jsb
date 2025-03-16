@@ -118,6 +118,7 @@ class PerfMetrics:
 class GenerationResult:
     input: str
     output: str
+    task: str = ""
     json_schema: Optional[Schema] = None
     id: str = field(default_factory=lambda: str(uuid4()))
     generated_tokens: List[Token] = field(default_factory=list)

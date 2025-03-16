@@ -28,12 +28,14 @@ class Engine(ABC, Generic[T]):
         self,
         prompt: str,
         schema: Schema,
+        task: str,
     ) -> GenerationResult:
         schema = self.adapt_schema(schema)
         result = self._generate(prompt, schema)
 
         self.total_usage += result.token_usage
         result.json_schema = schema
+        result.task = task
         return result
 
     @abstractmethod
