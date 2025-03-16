@@ -45,6 +45,7 @@ class XGrammarConfig(EngineConfig):
 class XGrammarEngine(Engine[XGrammarConfig]):
     def __init__(self, config: XGrammarConfig):
         super().__init__(config)
+        add_triton_environment_variable()
 
         from xgrammar import TokenizerInfo, GrammarCompiler
         from transformers import AutoModelForCausalLM, AutoTokenizer
