@@ -25,6 +25,7 @@ def bench(
     perf_metrics = []
     declared_coverage = []
     empirical_coverage = []
+    compliance = []
 
     if not isinstance(prompt_fn, list):
         prompt_fn = [prompt_fn] * len(tasks)
@@ -40,13 +41,14 @@ def bench(
                 schema = engine.adapt_schema(schema)
                 result = engine.generate(task, prompt, schema)
                 task_states.append(result)
-        dc, ec, pm = evaluate(task_states)
+        dc, ec, cl, pm = evaluate(task_states)
         declared_coverage.append(dc)
         empirical_coverage.append(ec)
+        compliance.append(cl)
         perf_metrics.append(pm)
         all_states.append(task_states)
 
-    print_scores(declared_coverage, empirical_coverage, perf_metrics, tasks)
+    print_scores(declared_coverage, empirical_coverage, compliance, perf_metrics, tasks)
     print(engine.total_usage)
 
     if close_engine:
