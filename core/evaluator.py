@@ -91,6 +91,7 @@ def evaluate(
 
     return (
         safe_divide(declared_coverage, len(states)),
+        safe_divide(empirical_coverage, len(states)),
         safe_divide(empirical_coverage, declared_coverage),
         PerfMetrics(
             ttft=median(ttft_list),
@@ -104,6 +105,7 @@ def evaluate(
 def print_scores(
     declared_coverage: List[Optional[float]],
     empirical_coverage: List[Optional[float]],
+    compliance: List[Optional[float]],
     perf_metrics: List[PerfMetrics],
     tasks: List[str],
 ) -> None:
@@ -112,20 +114,22 @@ def print_scores(
             "Task",
             "Declared coverage",
             "Empirical coverage",
+            "Compliance",
             "TTFT (s)",
             "TPOT (ms)",
             "TGT (s)",
             "GCT (s)",
         ]
     )
-    for task, dc, ec, pm in zip(
-        tasks, declared_coverage, empirical_coverage, perf_metrics
+    for task, dc, ec, cl, pm in zip(
+        tasks, declared_coverage, empirical_coverage, compliance, perf_metrics
     ):
         table.add_row(
             [
                 task,
                 detect_none(dc),
                 detect_none(ec),
+                detect_none(cl),
                 detect_none(pm.ttft),
                 detect_none(pm.tpot),
                 detect_none(pm.tgt),
