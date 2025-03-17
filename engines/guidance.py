@@ -141,8 +141,5 @@ class GuidanceEngine(Engine[GuidanceConfig]):
     def max_context_length(self) -> int:
         return self.model.n_ctx()
 
-    def close(self):
-        self.model.close()
-
 
 register_engine("guidance", GuidanceEngine, GuidanceConfig)

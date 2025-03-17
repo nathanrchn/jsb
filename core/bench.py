@@ -17,7 +17,6 @@ def bench(
     tasks: List[str],
     limit: Optional[int] = None,
     prompt_fn: Union[FormatPrompt, List[FormatPrompt]] = DEFAULT_FORMAT_PROMPT,
-    close_engine: bool = True,
     save_states: bool = False,
 ) -> List[List[GenerationState]]:
     id = nanoid()
@@ -50,9 +49,6 @@ def bench(
 
     print_scores(declared_coverage, empirical_coverage, compliance, perf_metrics, tasks)
     print(engine.total_usage)
-
-    if close_engine:
-        engine.close()
 
     if save_states:
         if not os.path.exists("states"):
