@@ -10,7 +10,6 @@ from core.registry import register_engine
 from core.engine import Engine, EngineConfig
 from core.utils import COMPILATION_TIMEOUT, GENERATION_TIMEOUT
 from core.types import (
-    TokenUsage,
     CompileStatus,
     DecodingStatus,
     GenerationState,
@@ -151,10 +150,7 @@ class XGrammarEngine(Engine[XGrammarConfig]):
             state.metadata.first_token_arrival_time = timing_processor.timestamps[0]
 
         state.output = output_text
-        state.token_usage = TokenUsage(
-            input_tokens=self.count_tokens(state.input),
-            output_tokens=self.count_tokens(output_text),
-        )
+        state.token_usage.output_tokens = self.count_tokens(output_text)
 
         return
 

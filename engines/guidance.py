@@ -9,7 +9,6 @@ from core.engine import Engine, EngineConfig
 from core.evaluator import is_json_schema_valid
 from core.types import (
     Schema,
-    TokenUsage,
     CompileStatus,
     DecodingStatus,
     GenerationState,

@@ -11,7 +11,6 @@ from core.utils import COMPILATION_TIMEOUT, GENERATION_TIMEOUT
 from core.types import (
     Token,
     Schema,
-    TokenUsage,
     CompileStatus,
     DecodingStatus,
     GenerationState,

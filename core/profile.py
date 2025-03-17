@@ -2,7 +2,7 @@ from time import time
 from functools import wraps
 from typing import Callable, Dict, Any, TYPE_CHECKING
 
-from core.types import PerfMetrics, DecodingStatusCode
+from core.types import PerfMetrics
 
 if TYPE_CHECKING:
     from core.engine import Engine, GenerationState
