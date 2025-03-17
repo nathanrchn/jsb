@@ -90,7 +90,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
             state.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
-            
+
             self.model.model.reset()
             return
 

@@ -96,9 +96,13 @@ class PerfMetrics:
         num_output_tokens: int,
     ):
         ttft = safe_subtract(first_token_arrival_time, start_time)
-        tpot = safe_divide(
-            safe_subtract(end_time, first_token_arrival_time),
-            safe_subtract(num_output_tokens, 1),
+        tpot = (
+            safe_divide(
+                safe_subtract(end_time, first_token_arrival_time),
+                safe_subtract(num_output_tokens, 1),
+            )
+            if num_output_tokens > 0
+            else None
         )
         tgt = safe_subtract(end_time, start_time)
         gct = safe_subtract(grammar_compilation_end_time, start_time)

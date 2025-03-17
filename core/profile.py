@@ -19,9 +19,6 @@ def profile_generation(
         state: "GenerationState" = generate(engine, task, prompt, schema)
         gen_end_time: float = time()
 
-        if state.metadata.decoding_status.code == DecodingStatusCode.UNKOWN_ERROR:
-            return state
-
         perf_metrics: PerfMetrics = PerfMetrics.from_timestamps(
             start_time=gen_start_time,
             grammar_compilation_end_time=state.metadata.grammar_compilation_end_time,

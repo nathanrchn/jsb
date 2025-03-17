@@ -125,7 +125,7 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
 
             self.model.reset()
             return
-        
+
         generation = "".join(tokens_str)
 
         state.output = generation
