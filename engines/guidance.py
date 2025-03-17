@@ -78,8 +78,6 @@ class GuidanceEngine(Engine[GuidanceConfig]):
 
         try:
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
-                from time import sleep
-
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     state_iterator = (
                         self.guidance_model_state.stream() + state.input + generation_op
@@ -87,7 +85,6 @@ class GuidanceEngine(Engine[GuidanceConfig]):
                     for i, guidance_state in enumerate(state_iterator):
                         if i == 0:
                             state.metadata.first_token_arrival_time = time()
-                        sleep(5)
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
                 state.metadata.decoding_status = DecodingStatus(
