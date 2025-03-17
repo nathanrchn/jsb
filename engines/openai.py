@@ -78,22 +78,16 @@ class OpenAIEngine(Engine[OpenAIConfig]):
 
             tokens_str.append(chunk_content)
 
-        usage: TokenUsage = TokenUsage(
-            input_tokens=chunk.usage.prompt_tokens,
-            output_tokens=chunk.usage.completion_tokens,
-        )
-
+        state.token_usage.output_tokens = chunk.usage.completion_tokens
         state.metadata.first_token_arrival_time = first_token_arrival_time
         state.metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
         state.metadata.decoding_status = DecodingStatus(code=DecodingStatusCode.OK)
 
-        tokens_ids = [self.convert_token_to_id(token) for token in tokens_str]
-
         state.output = "".join(tokens_str)
         state.generated_tokens = [
-            Token(id=id, text=token) for id, token in zip(tokens_ids, tokens_str)
+            Token(id=self.convert_token_to_id(token), text=token)
+            for token in tokens_str
         ]
-        state.token_usage = usage
         return
 
     def adapt_schema(self, schema: Dict[str, Any]) -> Dict[str, Any]:

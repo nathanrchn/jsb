@@ -10,7 +10,6 @@ from core.engine import Engine, EngineConfig
 from core.utils import COMPILATION_TIMEOUT, GENERATION_TIMEOUT
 from core.types import (
     Token,
-    TokenUsage,
     CompileStatus,
     DecodingStatus,
     GenerationState,
@@ -109,11 +108,6 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
                         if chunk_content:
                             tokens_str.append(chunk_content)
 
-                    generation = "".join(tokens_str)
-                    tokens_ids = [
-                        self.convert_token_to_id(token) for token in tokens_str
-                    ]
-
                     state.metadata.decoding_status = DecodingStatus(
                         code=DecodingStatusCode.OK
                     )
@@ -123,25 +117,25 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
                     code=DecodingStatusCode.DECODING_TIMEOUT,
                     message="Generation timed out",
                 )
-                return
 
         except Exception as e:
             state.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
+
+            self.model.reset()
             return
+        
+        generation = "".join(tokens_str)
 
-        state.token_usage = TokenUsage(
-            input_tokens=self.count_tokens(state.input),
-            output_tokens=self.count_tokens(generation),
-        )
-
-        self.model.reset()
         state.output = generation
+        state.token_usage.output_tokens = self.count_tokens(generation)
         state.generated_tokens = [
-            Token(id=id, text=token) for id, token in zip(tokens_ids, tokens_str)
+            Token(id=self.convert_token_to_id(token), text=token)
+            for token in tokens_str
         ]
 
+        self.model.reset()
         return
 
     def _check_grammar_safety(self, grammar: "LlamaGrammar") -> Dict[str, Any]:
@@ -178,9 +172,6 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
     @property
     def max_context_length(self) -> int:
         return self.model.n_ctx()
-
-    def close(self):
-        self.model.close()
 
 
 register_engine("llama_cpp", LlamaCppEngine, LlamaCppConfig)

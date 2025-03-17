@@ -79,6 +79,8 @@ class GuidanceEngine(Engine[GuidanceConfig]):
 
         try:
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
+                from time import sleep
+
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     state_iterator = (
                         self.guidance_model_state.stream() + state.input + generation_op
@@ -86,23 +88,28 @@ class GuidanceEngine(Engine[GuidanceConfig]):
                     for i, guidance_state in enumerate(state_iterator):
                         if i == 0:
                             state.metadata.first_token_arrival_time = time()
-                    final_state = guidance_state
+                        sleep(5)
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
                 state.metadata.decoding_status = DecodingStatus(
                     code=DecodingStatusCode.DECODING_TIMEOUT,
                     message="Generation timed out",
                 )
+
+                # unset the first token arrival time avoid false performance metrics
+                state.metadata.first_token_arrival_time = None
+                self.guidance_model_state.engine.model_obj.reset()
                 return
 
         except Exception as e:
             state.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
+            self.guidance_model_state.engine.model_obj.reset()
             return
 
         try:
-            generation = final_state["generated_object"]
+            generation = guidance_state["generated_object"]
             state.metadata.decoding_status = DecodingStatus(code=DecodingStatusCode.OK)
         except KeyError:
             state.metadata.decoding_status = DecodingStatus(
@@ -112,10 +119,7 @@ class GuidanceEngine(Engine[GuidanceConfig]):
             generation = ""
 
         state.output = generation
-        state.token_usage = TokenUsage(
-            input_tokens=self.count_tokens(state.input),
-            output_tokens=self.count_tokens(generation),
-        )
+        state.token_usage.output_tokens = self.count_tokens(generation)
 
         self.guidance_model_state.engine.model_obj.reset()
         return

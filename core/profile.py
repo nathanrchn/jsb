@@ -2,7 +2,7 @@ from time import time
 from functools import wraps
 from typing import Callable, Dict, Any, TYPE_CHECKING
 
-from core.types import PerfMetrics
+from core.types import PerfMetrics, DecodingStatusCode
 
 if TYPE_CHECKING:
     from core.engine import Engine, GenerationState
@@ -18,6 +18,9 @@ def profile_generation(
         gen_start_time: float = time()
         state: "GenerationState" = generate(engine, task, prompt, schema)
         gen_end_time: float = time()
+
+        if state.metadata.decoding_status.code == DecodingStatusCode.UNKOWN_ERROR:
+            return state
 
         perf_metrics: PerfMetrics = PerfMetrics.from_timestamps(
             start_time=gen_start_time,

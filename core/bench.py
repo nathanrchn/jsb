@@ -22,10 +22,10 @@ def bench(
 ) -> List[List[GenerationState]]:
     id = nanoid()
 
+    compliance = []
     perf_metrics = []
     declared_coverage = []
     empirical_coverage = []
-    compliance = []
 
     if not isinstance(prompt_fn, list):
         prompt_fn = [prompt_fn] * len(tasks)

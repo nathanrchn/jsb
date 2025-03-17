@@ -3,6 +3,7 @@ import sys
 import random
 import string
 from json import dumps
+from dacite import from_dict
 from omegaconf import OmegaConf
 from contextlib import contextmanager
 from typing import List, Optional, TypeVar, Type, TYPE_CHECKING
@@ -18,8 +19,7 @@ T = TypeVar("T")
 
 
 def load_config(config_type: Type[T], config_path: str) -> T:
-    config = OmegaConf.load(config_path)
-    return OmegaConf.merge(config, OmegaConf.structured(config_type, config))
+    return from_dict(data_class=config_type, data=OmegaConf.load(config_path))
 
 
 DEFAULT_FORMAT_PROMPT: "FormatPrompt" = (

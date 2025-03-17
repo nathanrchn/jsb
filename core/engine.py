@@ -32,6 +32,8 @@ class Engine(ABC, Generic[T]):
     ) -> GenerationState:
         schema = self.adapt_schema(schema)
         state = GenerationState(task=task, input=prompt, output="", schema=schema)
+        state.token_usage.input_tokens = self.count_tokens(state.input)
+
         self._generate(state)
 
         self.total_usage += state.token_usage

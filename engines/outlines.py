@@ -76,11 +76,6 @@ class OutlinesEngine(Engine[OutlinesConfig]):
                             state.metadata.first_token_arrival_time = time()
                         tokens_str.append(token)
 
-                    output = "".join(tokens_str)
-                    tokens_ids = [
-                        self.convert_token_to_id(token) for token in tokens_str
-                    ]
-
                     state.metadata.decoding_status = DecodingStatus(
                         code=DecodingStatusCode.OK
                     )
@@ -90,26 +85,25 @@ class OutlinesEngine(Engine[OutlinesConfig]):
                     code=DecodingStatusCode.DECODING_TIMEOUT,
                     message="Generation timed out",
                 )
-                return
 
         except Exception as e:
             state.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
+            
+            self.model.model.reset()
             return
 
-        state.token_usage = TokenUsage(
-            input_tokens=self.count_tokens(state.input),
-            output_tokens=self.count_tokens(output),
-        )
+        output = "".join(tokens_str)
+        state.token_usage.output_tokens = self.count_tokens(output)
 
         state.output = output
         state.generated_tokens = [
-            Token(id=id, text=token) for id, token in zip(tokens_ids, tokens_str)
+            Token(id=self.convert_token_to_id(token), text=token)
+            for token in tokens_str
         ]
 
         self.model.model.reset()
-
         return
 
     def _compile_grammar(
