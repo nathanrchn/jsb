@@ -52,10 +52,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
         )
 
     def _generate(self, state: GenerationState) -> None:
-        from outlines.caching import cache_disabled
-
-        with cache_disabled():
-            generator = self._compile_grammar(state.schema, state.metadata)
+        generator = self._compile_grammar(state.schema, state.metadata)
 
         if (
             state.metadata.compile_status.code != CompileStatusCode.OK
