@@ -83,10 +83,10 @@ class GuidanceEngine(Engine[GuidanceConfig]):
                     state_iterator = (
                         self.guidance_model_state.stream() + state.input + generation_op
                     )
-                    for i, state in enumerate(state_iterator):
+                    for i, guidance_state in enumerate(state_iterator):
                         if i == 0:
                             state.metadata.first_token_arrival_time = time()
-                    final_state = state
+                    final_state = guidance_state
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
                 state.metadata.decoding_status = DecodingStatus(
