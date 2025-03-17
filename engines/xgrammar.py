@@ -1,10 +1,11 @@
-import time
+import os
 import torch
 import stopit
+from time import time
 from json import dumps
 from dataclasses import dataclass
-from typing import List, Optional
 from transformers.generation import LogitsProcessor
+from typing import List, Optional, TYPE_CHECKING, Dict, Any
 
 from core.registry import register_engine
 from core.engine import Engine, EngineConfig
@@ -18,6 +19,10 @@ from core.types import (
 )
 
 
+if TYPE_CHECKING:
+    from xgrammar import GrammarCompiler
+
+
 class TimingLogitsProcessor(LogitsProcessor):
     """Logits processor that records timestamps for token generation."""
 
@@ -26,7 +31,7 @@ class TimingLogitsProcessor(LogitsProcessor):
         self.timestamps = []
 
     def __call__(self, _, scores):
-        self.timestamps.append(time.time())
+        self.timestamps.append(time())
         return scores
 
 
@@ -41,7 +46,7 @@ class XGrammarConfig(EngineConfig):
 class XGrammarEngine(Engine[XGrammarConfig]):
     def __init__(self, config: XGrammarConfig):
         super().__init__(config)
-        add_triton_environment_variable()
+        add_environment_variables()
 
         from xgrammar import TokenizerInfo, GrammarCompiler
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -67,13 +72,35 @@ class XGrammarEngine(Engine[XGrammarConfig]):
         logits_processors = [timing_processor]
 
         try:
+            json_schema_str = dumps(state.schema)
+
+            seg_fault_check = self._check_grammar_safety(
+                self.grammar_compiler, json_schema_str, COMPILATION_TIMEOUT
+            )
+            if not seg_fault_check["success"]:
+                if "exit_code" in seg_fault_check and seg_fault_check["exit_code"] == 2:
+                    state.metadata.compile_status = CompileStatus(
+                        code=CompileStatusCode.UNSUPPORTED_SCHEMA,
+                        message="Grammar compilation timed out",
+                    )
+                    return
+                else:
+                    state.metadata.compile_status = CompileStatus(
+                        code=CompileStatusCode.UNSUPPORTED_SCHEMA,
+                        message=seg_fault_check.get(
+                            "error",
+                            f"Unknown error with exit code {seg_fault_check.get('exit_code', 'unknown')}",
+                        ),
+                    )
+                    return
+
             with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
-                    json_schema_str = dumps(state.schema)
                     compiled_grammar = self.grammar_compiler.compile_json_schema(
                         json_schema_str
                     )
-                    state.metadata.grammar_compilation_end_time = time.time()
+
+                    state.metadata.grammar_compilation_end_time = time()
                     state.metadata.compile_status = CompileStatus(
                         code=CompileStatusCode.OK
                     )
@@ -154,6 +181,37 @@ class XGrammarEngine(Engine[XGrammarConfig]):
 
         return
 
+    def _check_grammar_safety(
+        self, grammar_compiler: "GrammarCompiler", schema_str: str, timeout: int
+    ) -> Dict[str, Any]:
+        def child_process():
+            import signal
+
+            signal.signal(signal.SIGALRM, lambda _, __: os._exit(2))
+            signal.alarm(timeout)
+            try:
+                grammar_compiler.compile_json_schema(schema_str)
+                os._exit(0)
+            except Exception:
+                os._exit(1)
+
+        id = os.fork()
+        if id == 0:
+            child_process()
+        else:
+            _, status = os.waitpid(id, 0)
+            if os.WIFEXITED(status):
+                exit_code = os.WEXITSTATUS(status)
+                return {"success": exit_code == 0, "exit_code": exit_code}
+            elif os.WIFSIGNALED(status):
+                signal_num = os.WTERMSIG(status)
+                return {
+                    "success": False,
+                    "error": f"Process terminated by signal {signal_num}",
+                    "exit_code": -signal_num,
+                }
+            return {"success": False, "error": "Unknown status"}
+
     def encode(self, text: str) -> List[int]:
         return self.tokenizer.encode(text, add_special_tokens=False)
 
@@ -165,7 +223,7 @@ class XGrammarEngine(Engine[XGrammarConfig]):
         return self.tokenizer.model_max_length
 
 
-def add_triton_environment_variable():
+def add_environment_variables():
     import os
     import subprocess
 
@@ -188,6 +246,9 @@ def add_triton_environment_variable():
 
     except Exception as e:
         print(f"Error setting TRITON_LIBCUDA_PATH: {e}")
+
+    # Disable tokenizer parallelism to avoid deadlocks
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 register_engine("xgrammar", XGrammarEngine, XGrammarConfig)
