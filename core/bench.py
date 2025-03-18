@@ -9,7 +9,7 @@ from core.engine import Engine
 from core.dataset import Dataset, DatasetConfig
 from core.evaluator import evaluate, print_scores
 from core.types import FormatPrompt, GenerationState
-from core.utils import DEFAULT_FORMAT_PROMPT, disable_print, nanoid
+from core.utils import DEFAULT_FORMAT_PROMPT, disable_print, nanoid, safe_min
 
 
 def bench(
@@ -55,7 +55,10 @@ def bench(
         task_states = []
         dataset = Dataset(DatasetConfig(task, limit=limit))
         for prompt, schema in tqdm(
-            dataset.iter(pf), total=limit or len(dataset), desc=task, file=sys.stdout
+            dataset.iter(pf),
+            total=safe_min(len(dataset), limit),
+            desc=task,
+            file=sys.stdout,
         ):
             with disable_print():
                 schema = engine.adapt_schema(schema)

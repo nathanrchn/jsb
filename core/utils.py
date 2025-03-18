@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from core.types import FormatPrompt
 
 GENERATION_TIMEOUT = 60
-COMPILATION_TIMEOUT = 40
+COMPILATION_TIMEOUT = 10
 
 
 T = TypeVar("T")
@@ -39,6 +39,12 @@ def safe_subtract(a: Optional[float], b: Optional[float]) -> Optional[float]:
     if a is None or b is None:
         return None
     return a - b
+
+
+def safe_min(a: int, b: Optional[int]) -> int:
+    if b is None:
+        return a
+    return min(a, b)
 
 
 def median(values: List[float]) -> float:

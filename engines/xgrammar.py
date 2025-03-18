@@ -53,8 +53,8 @@ class XGrammarEngine(Engine[XGrammarConfig]):
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.model)
         self.model = AutoModelForCausalLM.from_pretrained(
-            self.config.model, torch_dtype=torch.bfloat16, device_map="auto"
-        )
+            self.config.model, torch_dtype=torch.bfloat16
+        ).to(get_best_device())
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
         tokenizer_info = TokenizerInfo.from_huggingface(
@@ -249,6 +249,15 @@ def add_environment_variables():
 
     # Disable tokenizer parallelism to avoid deadlocks
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+
+def get_best_device():
+    if torch.cuda.is_available():
+        return "cuda"
+    elif torch.backends.mps.is_available():
+        return "mps"
+    else:
+        return "cpu"
 
 
 register_engine("xgrammar", XGrammarEngine, XGrammarConfig)

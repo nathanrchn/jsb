@@ -11,7 +11,7 @@ openai_engine = OpenAIEngine(OpenAIConfig(model="gpt-4o-mini"))
 bench(
     openai_engine,
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
-    limit=100,
+    limit=25,
     save_states=True,
 )
 
@@ -20,7 +20,7 @@ gemini_engine = GeminiEngine(OpenAIConfig(model="models/gemini-2.0-flash-lite"))
 bench(
     gemini_engine,
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
-    limit=100,
+    limit=25,
     save_states=True,
 )
 
@@ -35,7 +35,7 @@ guidance_engine = GuidanceEngine(
 bench(
     guidance_engine,
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
-    limit=100,
+    limit=25,
     save_states=True,
 )
 
@@ -46,7 +46,7 @@ llama_cpp_engine = LlamaCppEngine(
 bench(
     llama_cpp_engine,
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
-    limit=100,
+    limit=25,
     save_states=True,
 )
 
@@ -62,7 +62,7 @@ outlines_engine = OutlinesEngine(
 bench(
     outlines_engine,
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
-    limit=100,
+    limit=25,
     save_states=True,
 )
 
@@ -73,6 +73,6 @@ xgrammar_engine = XGrammarEngine(
 bench(
     xgrammar_engine,
     ["Glaiveai2K", "Github_easy", "Snowplow", "Github_medium"],
-    limit=100,
+    limit=25,
     save_states=True,
 )

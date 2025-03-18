@@ -14,7 +14,9 @@ if __name__ == "__main__":
 
     dacite_config = Config(check_types=False)
     with open(args.states, "r") as f:
-        states = [from_dict(GenerationState, loads(line), config=dacite_config) for line in f]
+        states = [
+            from_dict(GenerationState, loads(line), config=dacite_config) for line in f
+        ]
 
     task_states: Dict[str, List[GenerationState]] = {}
     for state in states:
