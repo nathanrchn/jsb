@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from core.registry import register_engine
 from engines.llama_cpp import LlamaCppConfig
 from core.engine import Engine, EngineConfig
+from core.utils import COMPILATION_TIMEOUT, GENERATION_TIMEOUT
 from core.evaluator import is_json_schema_valid
 from core.types import (
     Schema,
@@ -15,10 +16,6 @@ from core.types import (
     CompileStatusCode,
     DecodingStatusCode,
 )
-
-
-GENERATION_TIMEOUT = 60
-COMPILATION_TIMEOUT = 30
 
 
 @dataclass
