@@ -41,7 +41,9 @@ def validate_json_schema(instance: Schema, schema: Schema) -> bool:
     validator = Draft202012Validator(schema, format_checker=format_checker)
     try:
         validator.validate(instance)
-    except ValidationError:
+    
+    # we catch all exceptions include ValidationError and Error from extension validators
+    except Exception as e:
         return False
     return True
 
