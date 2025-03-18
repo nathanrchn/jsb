@@ -18,6 +18,7 @@ def bench(
     limit: Optional[int] = None,
     prompt_fn: Union[FormatPrompt, List[FormatPrompt]] = DEFAULT_FORMAT_PROMPT,
     save_states: bool = False,
+    close_engine: bool = True,
 ) -> List[List[GenerationState]]:
     """Benchmarks an engine with specified tasks and datasets.
 
@@ -38,6 +39,8 @@ def bench(
             {dumps(schema)}
     :param save_states: bool
         Whether to save the generation states after the benchmark.
+    :param close_engine: bool
+        Whether to close the engine after the benchmark.
 
     :return: List[List[GenerationState]]
         The generation states for each sample for each task.
@@ -83,5 +86,8 @@ def bench(
                     f.write(f"{dumps(asdict(state))}\n")
 
         print(f"States saved to states/{id}.jsonl")
+
+    if close_engine:
+        engine.close()
 
     return all_states

@@ -8,18 +8,23 @@ from core.registry import ENGINE_TO_CLASS, ENGINE_TO_CONFIG
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--engine", type=str, required=True, choices=ENGINE_TO_CLASS.keys())
+    parser.add_argument(
+        "--engine", type=str, required=True, choices=ENGINE_TO_CLASS.keys()
+    )
     parser.add_argument("--config", type=str, default=None)
-    parser.add_argument("--tasks", type=str, default="Github_easy")
+    parser.add_argument("--tasks", type=str, required=True)
     parser.add_argument("--limit", type=int, required=False)
     parser.add_argument("--save_states", action="store_true")
     args = parser.parse_args()
 
     tasks = args.tasks.split(",")
     if not all(task in DATASET_NAMES for task in tasks):
-        raise ValueError(f"Invalid task names: {args.tasks}, available: {DATASET_NAMES}")
+        raise ValueError(
+            f"Invalid task names: {args.tasks}, available: {DATASET_NAMES}"
+        )
+
     if args.config is None:
-        args.config = os.path.join("configs", f"{args.engine}.yaml")
+        args.config = os.path.join("tests/configs", f"{args.engine}.yaml")
 
     with disable_print():
         engine = ENGINE_TO_CLASS[args.engine](
@@ -31,7 +36,5 @@ if __name__ == "__main__":
         tasks=tasks,
         limit=args.limit,
         save_states=args.save_states,
+        close_engine=True,
     )
-
-    engine.close()
-

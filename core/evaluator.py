@@ -41,9 +41,9 @@ def validate_json_schema(instance: Schema, schema: Schema) -> bool:
     validator = Draft202012Validator(schema, format_checker=format_checker)
     try:
         validator.validate(instance)
-    
+
     # we catch all exceptions include ValidationError and Error from extension validators
-    except Exception as e:
+    except Exception:
         return False
     return True
 
@@ -85,14 +85,10 @@ def evaluate(
         if state.perf_metrics.tpot is not None
     ]
     tgt_list = [
-        state.perf_metrics.tgt
-        for state in states
-        if state.perf_metrics.tgt is not None
+        state.perf_metrics.tgt for state in states if state.perf_metrics.tgt is not None
     ]
     gct_list = [
-        state.perf_metrics.gct
-        for state in states
-        if state.perf_metrics.gct is not None
+        state.perf_metrics.gct for state in states if state.perf_metrics.gct is not None
     ]
 
     return (
