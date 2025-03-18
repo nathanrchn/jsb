@@ -1,6 +1,6 @@
 import os
-from argparse import ArgumentParser
 from core.bench import bench
+from argparse import ArgumentParser
 from core.dataset import DATASET_NAMES
 from core.utils import load_config, disable_print
 from core.registry import ENGINE_TO_CLASS, ENGINE_TO_CONFIG
