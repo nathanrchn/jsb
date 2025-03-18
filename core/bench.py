@@ -19,6 +19,29 @@ def bench(
     prompt_fn: Union[FormatPrompt, List[FormatPrompt]] = DEFAULT_FORMAT_PROMPT,
     save_states: bool = False,
 ) -> List[List[GenerationState]]:
+    """Benchmarks an engine with specified tasks and datasets.
+
+    :param engine: Engine
+        The engine to benchmark.
+    :param tasks: List[str]
+        The tasks to benchmark.
+    :param limit: Optional[int]
+        The limit on the number of samples to benchmark.
+    :param prompt_fn: Union[FormatPrompt, List[FormatPrompt]]
+        The function(s) to format the schema into a prompt. If a single
+        function is provided, it will be used for all tasks. If a list of
+        functions is provided, each function will be used for the corresponding
+        task. The default format prompt is:
+            You need to generate a JSON object that matches the schema below.
+            Do not include the schema in the output and DIRECTLY return the
+            JSON object without any additional information. The schema is:
+            {dumps(schema)}
+    :param save_states: bool
+        Whether to save the generation states after the benchmark.
+
+    :return: List[List[GenerationState]]
+        The generation states for each sample for each task.
+    """
     id = nanoid()
 
     compliance = []

@@ -56,7 +56,7 @@ class TokenUsage:
             ff_output_tokens=self.ff_output_tokens + other.ff_output_tokens,
         )
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return (
             f"token usage: {self.input_tokens:,} input, {self.output_tokens:,} output."
         )
@@ -79,12 +79,20 @@ class GenerationMetadata:
 
 @dataclass
 class PerfMetrics:
-    ttft: Optional[float] = None  # Time to first token in s
-    tpot: Optional[float] = None  # Time per output token in ms
-    tgt: Optional[float] = None  # Total generation time in s
-    gct: Optional[float] = None  # Grammar compilation time in s
-    prft: Optional[float] = None  # Prefilling time in s
-    peak_memory: Optional[float] = None  # In MB
+    """Performance metrics for generation processes."""
+
+    # Time to first token in s
+    ttft: Optional[float] = None
+    # Time per output token in ms
+    tpot: Optional[float] = None
+    # Total generation time in s
+    tgt: Optional[float] = None
+    # Grammar compilation time in s
+    gct: Optional[float] = None
+    # Prefilling time in s
+    prft: Optional[float] = None
+    # Peak memory in MB
+    peak_memory: Optional[float] = None
 
     @classmethod
     def from_timestamps(
@@ -118,6 +126,8 @@ class PerfMetrics:
 
 @dataclass
 class GenerationState:
+    """State of a generation run."""
+
     task: str
     input: str
     output: str

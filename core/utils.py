@@ -23,7 +23,7 @@ def load_config(config_type: Type[T], config_path: str) -> T:
 
 
 DEFAULT_FORMAT_PROMPT: "FormatPrompt" = (
-    lambda schema: f" You need to generate a JSON object that matches the schema below. The schema is: {dumps(schema)}"
+    lambda schema: f"You need to generate a JSON object that matches the schema below. The schema is: {dumps(schema)}"
 )
 
 

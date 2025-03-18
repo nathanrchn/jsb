@@ -18,6 +18,11 @@ class DatasetConfig:
 
 class Dataset:
     def __init__(self, config: DatasetConfig):
+        """Represents the dataset that is used to benchmark the engine.
+
+        :param config: DatasetConfig
+            The configuration for the dataset.
+        """
         self.config = config
         self.dataset = load_dataset(
             path=DATASET_HUGGINGFACE_PATH, name=config.dataset_name, split="test"
