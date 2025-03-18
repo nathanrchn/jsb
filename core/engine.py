@@ -71,3 +71,11 @@ class Engine(ABC, Generic[T]):
     def count_tokens(self, text: str) -> int:
         res = self.encode(text)
         return len(res) if res else 0
+    
+    def close(self):
+        # Close the model and the sampler for LlamaCpp
+        # https://github.com/abetlen/llama-cpp-python/issues/1610
+        if hasattr(self.model, "_sampler"):
+            self.model._sampler.close()
+            self.model.close()
+

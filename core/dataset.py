@@ -8,6 +8,7 @@ from core.types import Schema, FormatPrompt
 DATASET_SCHEMA_COLUMN = "json_schema"
 DATASET_HUGGINGFACE_PATH = "epfl-dlab/JSONSchemaBench"
 
+DATASET_NAMES = ['Github_easy', 'Github_hard', 'Github_medium', 'Github_trivial', 'Github_ultra', 'Glaiveai2K', 'JsonSchemaStore', 'Kubernetes', 'Snowplow', 'WashingtonPost', 'default']
 
 @dataclass
 class DatasetConfig:
@@ -19,7 +20,7 @@ class Dataset:
     def __init__(self, config: DatasetConfig):
         self.config = config
         self.dataset = load_dataset(
-            path=DATASET_HUGGINGFACE_PATH, name=config.dataset_name, split="all"
+            path=DATASET_HUGGINGFACE_PATH, name=config.dataset_name, split="test"
         )
 
     def __len__(self):
