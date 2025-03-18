@@ -1,4 +1,4 @@
 model_engine_config:
   model: "bartowski/Llama-3.2-1B-Instruct-GGUF"
-  filename: "*f16.gguf"
+  filename: "Llama-3.2-1B-Instruct-f16.gguf"
 hf_tokenizer_id: "meta-llama/Llama-3.2-1B-Instruct"
