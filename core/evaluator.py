@@ -3,10 +3,10 @@ from json import loads
 from prettytable import PrettyTable
 from typing import List, Tuple, Optional
 from ipaddress import IPv4Address, IPv6Address
-from jsonschema import Draft202012Validator, FormatChecker, ValidationError, SchemaError
+from jsonschema import Draft202012Validator, FormatChecker, SchemaError
 
 from core.utils import safe_divide, median, detect_none
-from core.types import Schema, CompileStatusCode, GenerationState, PerfMetrics
+from core.types import Schema, CompileStatusCode, GenerationOutput, PerfMetrics
 
 
 def is_json_schema_valid(schema: Schema):
@@ -49,19 +49,19 @@ def validate_json_schema(instance: Schema, schema: Schema) -> bool:
 
 
 def evaluate(
-    states: List[GenerationState],
+    outputs: List[GenerationOutput],
 ) -> Tuple[Optional[float], Optional[float], Optional[float], PerfMetrics]:
     declared_coverage = 0
     empirical_coverage = 0
 
-    for state in states:
-        output = state.output
-        schema = state.schema
+    for output in outputs:
+        output = output.output
+        schema = output.schema
 
         if schema is None or output is None:
             continue
 
-        if state.metadata.compile_status.code == CompileStatusCode.OK:
+        if output.metadata.compile_status.code == CompileStatusCode.OK:
             declared_coverage += 1
 
         try:
@@ -75,25 +75,29 @@ def evaluate(
         empirical_coverage += 1
 
     ttft_list = [
-        state.perf_metrics.ttft
-        for state in states
-        if state.perf_metrics.ttft is not None
+        output.perf_metrics.ttft
+        for output in outputs
+        if output.perf_metrics.ttft is not None
     ]
     tpot_list = [
-        state.perf_metrics.tpot
-        for state in states
-        if state.perf_metrics.tpot is not None
+        output.perf_metrics.tpot
+        for output in outputs
+        if output.perf_metrics.tpot is not None
     ]
     tgt_list = [
-        state.perf_metrics.tgt for state in states if state.perf_metrics.tgt is not None
+        output.perf_metrics.tgt
+        for output in outputs
+        if output.perf_metrics.tgt is not None
     ]
     gct_list = [
-        state.perf_metrics.gct for state in states if state.perf_metrics.gct is not None
+        output.perf_metrics.gct
+        for output in outputs
+        if output.perf_metrics.gct is not None
     ]
 
     return (
-        safe_divide(declared_coverage, len(states)),
-        safe_divide(empirical_coverage, len(states)),
+        safe_divide(declared_coverage, len(outputs)),
+        safe_divide(empirical_coverage, len(outputs)),
         safe_divide(empirical_coverage, declared_coverage),
         PerfMetrics(
             ttft=median(ttft_list),

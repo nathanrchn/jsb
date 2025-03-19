@@ -7,13 +7,13 @@ from typing import List, Optional, TYPE_CHECKING
 from core.registry import register_engine
 from engines.llama_cpp import LlamaCppConfig
 from core.engine import Engine, EngineConfig
-from core.utils import COMPILATION_TIMEOUT, GENERATION_TIMEOUT
+from core.utils import COMPILATION_TIMEOUT, GENERATION_TIMEOUT, safe_min
 from core.types import (
     Token,
     Schema,
     CompileStatus,
     DecodingStatus,
-    GenerationState,
+    GenerationOutput,
     CompileStatusCode,
     DecodingStatusCode,
     GenerationMetadata,
@@ -28,9 +28,12 @@ class OutlinesConfig(EngineConfig):
     model_engine_config: LlamaCppConfig
     grammar_cache_enabled: bool = False
     hf_tokenizer_id: Optional[str] = None
+    max_tokens: Optional[int] = None
 
 
 class OutlinesEngine(Engine[OutlinesConfig]):
+    name = "outlines"
+
     def __init__(self, config: OutlinesConfig):
         super().__init__(config)
 
@@ -50,11 +53,15 @@ class OutlinesEngine(Engine[OutlinesConfig]):
             n_gpu_layers=self.config.model_engine_config.n_gpu_layers,
         )
 
-    def _generate(self, state: GenerationState) -> None:
-        generator = self._compile_grammar(state.schema, state.metadata)
+        self.config.max_tokens = safe_min(
+            self.config.model_engine_config.n_ctx, self.config.max_tokens
+        )
+
+    def _generate(self, output: GenerationOutput) -> None:
+        generator = self._compile_grammar(output.schema, output.metadata)
 
         if (
-            state.metadata.compile_status.code != CompileStatusCode.OK
+            output.metadata.compile_status.code != CompileStatusCode.OK
             or generator is None
         ):
             return
@@ -63,30 +70,30 @@ class OutlinesEngine(Engine[OutlinesConfig]):
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     token_iterator = generator.stream(
-                        state.input,
+                        output.input,
                         temperature=self.config.model_engine_config.temperature,
-                        max_tokens=self.config.model_engine_config.max_tokens,
+                        max_tokens=self.config.max_tokens,
                         stop_at="```\n",
                     )
 
                     tokens_str = []
                     for i, token in enumerate(token_iterator):
                         if i == 0:
-                            state.metadata.first_token_arrival_time = time()
+                            output.metadata.first_token_arrival_time = time()
                         tokens_str.append(token)
 
-                    state.metadata.decoding_status = DecodingStatus(
+                    output.metadata.decoding_status = DecodingStatus(
                         code=DecodingStatusCode.OK
                     )
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
-                state.metadata.decoding_status = DecodingStatus(
+                output.metadata.decoding_status = DecodingStatus(
                     code=DecodingStatusCode.DECODING_TIMEOUT,
                     message="Generation timed out",
                 )
 
         except Exception as e:
-            state.metadata.decoding_status = DecodingStatus(
+            output.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
 
@@ -94,10 +101,10 @@ class OutlinesEngine(Engine[OutlinesConfig]):
             return
 
         output = "".join(tokens_str)
-        state.token_usage.output_tokens = self.count_tokens(output)
+        output.token_usage.output_tokens = self.count_tokens(output)
 
-        state.output = output
-        state.generated_tokens = [
+        output.output = output
+        output.generated_tokens = [
             Token(id=self.convert_token_to_id(token), text=token)
             for token in tokens_str
         ]
@@ -153,4 +160,4 @@ class OutlinesEngine(Engine[OutlinesConfig]):
         return self.config.model_engine_config.n_ctx
 
 
-register_engine("outlines", OutlinesEngine, OutlinesConfig)
+register_engine(OutlinesEngine, OutlinesConfig)

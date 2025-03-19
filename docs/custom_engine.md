@@ -28,7 +28,7 @@ Next, implement the `Engine` abstract class:
 
 ```python
 from core.engine import Engine
-from core.types import GenerationState, Schema
+from core.types import GenerationOutput, Schema
 
 class MyEngine(Engine[MyEngineConfig]):
     def __init__(self, config: MyEngineConfig):
@@ -36,18 +36,18 @@ class MyEngine(Engine[MyEngineConfig]):
         
         # ...
     
-    def _generate(self, state: GenerationState) -> None:
+    def _generate(self, output: GenerationOutput) -> None:
         """Generate content based on the prompt and schema"""
         # Implement the generation logic
-        prompt = state.input
+        prompt = output.input
         response = self.model.generate(
             prompt, 
             temperature=self.config.temperature
         )
         
-        # Update the state with the response
-        state.output = response
-        state.token_usage.output_tokens = self.count_tokens(response)
+        # Update the output with the response
+        output.output = response
+        output.token_usage.output_tokens = self.count_tokens(response)
     
     @property
     def max_context_length(self) -> int:
@@ -78,14 +78,14 @@ engine = MyEngine(config)
 
 # Run benchmark
 tasks = ["task1", "task2", "task3"]
-states = bench(engine, tasks, limit=10, save_states=True)
+outputs = bench(engine, tasks, limit=10, save_outputs=True)
 ```
 
 ## Required Abstract Methods
 
 Your engine must implement these abstract methods:
 
-1. `_generate(state: GenerationState) -> None`: Core generation logic
+1. `_generate(output: GenerationOutput) -> None`: Core generation logic
 2. `max_context_length() -> int`: Returns the maximum context length
 
 ## Optional Methods

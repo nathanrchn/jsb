@@ -5,7 +5,7 @@ from typing import List, Optional, TypeVar, Generic
 from core.types import (
     Schema,
     TokenUsage,
-    GenerationState,
+    GenerationOutput,
 )
 from core.profile import profile_generation
 
@@ -19,6 +19,8 @@ T = TypeVar("T", bound=EngineConfig)
 
 
 class Engine(ABC, Generic[T]):
+    name: str
+
     def __init__(self, config: T):
         """Defines the interface that should be implemented by all engines.
         Engines are assumed to take a schema and generate a JSON object that
@@ -38,7 +40,7 @@ class Engine(ABC, Generic[T]):
         task: str,
         prompt: str,
         schema: Schema,
-    ) -> GenerationState:
+    ) -> GenerationOutput:
         """Generates a JSON object that matches the schema.
 
         This method is used to generate a JSON object that matches the schema.
@@ -50,31 +52,31 @@ class Engine(ABC, Generic[T]):
             The prompt to generate the JSON object for.
         :param schema: Schema
             The schema to generate the JSON object for.
-        :return: GenerationState
-            The generation state.
+        :return: GenerationOutput
+            The generation output.
         """
 
         schema = self.adapt_schema(schema)
-        state = GenerationState(task=task, input=prompt, output="", schema=schema)
-        state.token_usage.input_tokens = self.count_tokens(state.input)
+        output = GenerationOutput(task=task, input=prompt, output="", schema=schema)
+        output.token_usage.input_tokens = self.count_tokens(output.input)
 
-        self._generate(state)
+        self._generate(output)
 
-        self.total_usage += state.token_usage
-        return state
+        self.total_usage += output.token_usage
+        return output
 
     @abstractmethod
     def _generate(
         self,
-        state: GenerationState,
+        output: GenerationOutput,
     ) -> None:
         """The method that should be implemented by all engines. It takes
-        a generation state and modifies it in place.
+        a generation output and modifies it in place.
 
-        :param state: GenerationState
-            The generation state.
+        :param output: GenerationOutput
+            The generation output.
         :return: None
-            The generation state is modified in place.
+            The generation output is modified in place.
         """
         raise NotImplementedError
 

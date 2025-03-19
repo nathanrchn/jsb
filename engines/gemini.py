@@ -8,6 +8,8 @@ from engines.openai import OpenAIEngine, OpenAIConfig
 
 
 class GeminiEngine(OpenAIEngine):
+    name = "gemini"
+
     def __init__(self, config: OpenAIConfig):
         super().__init__(
             config,
@@ -56,4 +58,4 @@ class GeminiEngine(OpenAIEngine):
         return max_context_length_dict[self.config.model]
 
 
-register_engine("gemini", GeminiEngine, OpenAIConfig)
+register_engine(GeminiEngine, OpenAIConfig)

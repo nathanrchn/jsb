@@ -8,7 +8,7 @@ from typing import List, Optional, Union
 from core.engine import Engine
 from core.dataset import Dataset, DatasetConfig
 from core.evaluator import evaluate, print_scores
-from core.types import FormatPrompt, GenerationState
+from core.types import FormatPrompt, GenerationOutput
 from core.utils import DEFAULT_FORMAT_PROMPT, disable_print, nanoid, safe_min
 
 
@@ -17,9 +17,9 @@ def bench(
     tasks: List[str],
     limit: Optional[int] = None,
     prompt_fn: Union[FormatPrompt, List[FormatPrompt]] = DEFAULT_FORMAT_PROMPT,
-    save_states: bool = False,
     close_engine: bool = True,
-) -> List[List[GenerationState]]:
+    save_outputs: bool = False,
+) -> List[List[GenerationOutput]]:
     """Benchmarks an engine with specified tasks and datasets.
 
     :param engine: Engine
@@ -37,22 +37,22 @@ def bench(
             Do not include the schema in the output and DIRECTLY return the
             JSON object without any additional information. The schema is:
             {dumps(schema)}
-    :param save_states: bool
-        Whether to save the generation states after the benchmark.
     :param close_engine: bool
         Whether to close the engine after the benchmark.
+    :param save_outputs: bool
+        Whether to save the generation outputs after the benchmark.
 
-    :return: List[List[GenerationState]]
-        The generation states for each sample for each task.
+    :return: List[List[GenerationOutput]]
+        The generation outputs for each sample for each task.
     """
     id = nanoid()
 
     if not isinstance(prompt_fn, list):
         prompt_fn = [prompt_fn] * len(tasks)
 
-    all_states = []
+    all_outputs = []
     for task, pf in zip(tasks, prompt_fn):
-        task_states = []
+        task_outputs = []
         dataset = Dataset(DatasetConfig(task, limit=limit))
         for prompt, schema in tqdm(
             dataset.iter(pf),
@@ -63,15 +63,15 @@ def bench(
             with disable_print():
                 schema = engine.adapt_schema(schema)
                 result = engine.generate(task, prompt, schema)
-                task_states.append(result)
-        all_states.append(task_states)
+                task_outputs.append(result)
+        all_outputs.append(task_outputs)
 
     compliance = []
     perf_metrics = []
     declared_coverage = []
     empirical_coverage = []
-    for states in all_states:
-        dc, ec, cl, pm = evaluate(states)
+    for outputs in all_outputs:
+        dc, ec, cl, pm = evaluate(outputs)
 
         compliance.append(cl)
         perf_metrics.append(pm)
@@ -81,18 +81,18 @@ def bench(
     print_scores(declared_coverage, empirical_coverage, compliance, perf_metrics, tasks)
     print(engine.total_usage)
 
-    if save_states:
-        if not os.path.exists("states"):
-            os.makedirs("states")
+    if save_outputs:
+        if not os.path.exists("outputs"):
+            os.makedirs("outputs")
 
-        with open(f"states/{id}.jsonl", "w") as f:
-            for states in all_states:
-                for state in states:
-                    f.write(f"{dumps(asdict(state))}\n")
+        with open(f"outputs/{engine.name}/{id}.jsonl", "w") as f:
+            for outputs in all_outputs:
+                for output in outputs:
+                    f.write(f"{dumps(asdict(output))}\n")
 
-        print(f"States saved to states/{id}.jsonl")
+        print(f"Outputs saved to outputs/{id}.jsonl")
 
     if close_engine:
         engine.close()
 
-    return all_states
+    return all_outputs

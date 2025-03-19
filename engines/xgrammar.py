@@ -13,7 +13,7 @@ from core.utils import COMPILATION_TIMEOUT, GENERATION_TIMEOUT
 from core.types import (
     CompileStatus,
     DecodingStatus,
-    GenerationState,
+    GenerationOutput,
     CompileStatusCode,
     DecodingStatusCode,
 )
@@ -44,6 +44,8 @@ class XGrammarConfig(EngineConfig):
 
 
 class XGrammarEngine(Engine[XGrammarConfig]):
+    name = "xgrammar"
+
     def __init__(self, config: XGrammarConfig):
         super().__init__(config)
         add_environment_variables()
@@ -64,7 +66,7 @@ class XGrammarEngine(Engine[XGrammarConfig]):
             tokenizer_info, cache_enabled=self.config.grammar_cache_enabled
         )
 
-    def _generate(self, state: GenerationState) -> None:
+    def _generate(self, output: GenerationOutput) -> None:
         from transformers.generation import GenerationConfig
         from xgrammar.contrib.hf import LogitsProcessor as XGrammarLogitsProcessor
 
@@ -72,20 +74,20 @@ class XGrammarEngine(Engine[XGrammarConfig]):
         logits_processors = [timing_processor]
 
         try:
-            json_schema_str = dumps(state.schema)
+            json_schema_str = dumps(output.schema)
 
             seg_fault_check = self._check_grammar_safety(
                 self.grammar_compiler, json_schema_str, COMPILATION_TIMEOUT
             )
             if not seg_fault_check["success"]:
                 if "exit_code" in seg_fault_check and seg_fault_check["exit_code"] == 2:
-                    state.metadata.compile_status = CompileStatus(
+                    output.metadata.compile_status = CompileStatus(
                         code=CompileStatusCode.UNSUPPORTED_SCHEMA,
                         message="Grammar compilation timed out",
                     )
                     return
                 else:
-                    state.metadata.compile_status = CompileStatus(
+                    output.metadata.compile_status = CompileStatus(
                         code=CompileStatusCode.UNSUPPORTED_SCHEMA,
                         message=seg_fault_check.get(
                             "error",
@@ -100,27 +102,27 @@ class XGrammarEngine(Engine[XGrammarConfig]):
                         json_schema_str
                     )
 
-                    state.metadata.grammar_compilation_end_time = time()
-                    state.metadata.compile_status = CompileStatus(
+                    output.metadata.grammar_compilation_end_time = time()
+                    output.metadata.compile_status = CompileStatus(
                         code=CompileStatusCode.OK
                     )
                     logits_processors.append(XGrammarLogitsProcessor(compiled_grammar))
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
-                state.metadata.compile_status = CompileStatus(
+                output.metadata.compile_status = CompileStatus(
                     code=CompileStatusCode.COMPILE_TIMEOUT,
                     message="Grammar compilation timed out",
                 )
                 return
 
         except Exception as e:
-            state.metadata.compile_status = CompileStatus(
+            output.metadata.compile_status = CompileStatus(
                 code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
             )
             return
 
         model_input = self.tokenizer(
-            state.input,
+            output.input,
             return_tensors="pt",
             add_special_tokens=False,
             padding=True,
@@ -146,22 +148,24 @@ class XGrammarEngine(Engine[XGrammarConfig]):
                         tokenizer=self.tokenizer,
                         logits_processor=logits_processors,
                     )
-                    state.metadata.decoding_status = DecodingStatus(
+                    output.metadata.decoding_status = DecodingStatus(
                         code=DecodingStatusCode.OK
                     )
 
             if len(timing_processor.timestamps) > 0:
-                state.metadata.first_token_arrival_time = timing_processor.timestamps[0]
+                output.metadata.first_token_arrival_time = timing_processor.timestamps[
+                    0
+                ]
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
-                state.metadata.decoding_status = DecodingStatus(
+                output.metadata.decoding_status = DecodingStatus(
                     code=DecodingStatusCode.DECODING_TIMEOUT,
                     message="Generation timed out",
                 )
                 return
 
         except Exception as e:
-            state.metadata.decoding_status = DecodingStatus(
+            output.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
             return
@@ -174,10 +178,10 @@ class XGrammarEngine(Engine[XGrammarConfig]):
         output_text = generated_texts[0] if generated_texts else ""
 
         if timing_processor.timestamps:
-            state.metadata.first_token_arrival_time = timing_processor.timestamps[0]
+            output.metadata.first_token_arrival_time = timing_processor.timestamps[0]
 
-        state.output = output_text
-        state.token_usage.output_tokens = self.count_tokens(output_text)
+        output.output = output_text
+        output.token_usage.output_tokens = self.count_tokens(output_text)
 
         return
 
@@ -260,4 +264,4 @@ def get_best_device():
         return "cpu"
 
 
-register_engine("xgrammar", XGrammarEngine, XGrammarConfig)
+register_engine(XGrammarEngine, XGrammarConfig)

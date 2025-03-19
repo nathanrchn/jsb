@@ -7,12 +7,12 @@ from core.registry import register_engine
 from engines.llama_cpp import LlamaCppConfig
 from core.engine import Engine, EngineConfig
 from core.evaluator import is_json_schema_valid
-from core.utils import COMPILATION_TIMEOUT, GENERATION_TIMEOUT
+from core.utils import COMPILATION_TIMEOUT, GENERATION_TIMEOUT, safe_min
 from core.types import (
     Schema,
     CompileStatus,
     DecodingStatus,
-    GenerationState,
+    GenerationOutput,
     CompileStatusCode,
     DecodingStatusCode,
 )
@@ -21,10 +21,12 @@ from core.types import (
 @dataclass
 class GuidanceConfig(EngineConfig):
     model_engine_config: LlamaCppConfig
-    max_tokens: int = 100000000
+    max_tokens: Optional[int] = None
 
 
 class GuidanceEngine(Engine[GuidanceConfig]):
+    name = "guidance"
+
     def __init__(self, config: GuidanceConfig):
         super().__init__(config)
 
@@ -42,33 +44,34 @@ class GuidanceEngine(Engine[GuidanceConfig]):
         self.guidance_model_state = LlamaCpp(self.model, echo=False, caching=False)
 
         self.tokenizer = self.guidance_model_state.engine.tokenizer
+        self.config.max_tokens = safe_min(self.model.n_ctx(), self.config.max_tokens)
 
-    def _generate(self, state: GenerationState) -> None:
+    def _generate(self, output: GenerationOutput) -> None:
         from guidance import json as guidance_json
 
         try:
             with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     generation_op = guidance_json(
-                        schema=state.schema,
+                        schema=output.schema,
                         name="generated_object",
                         temperature=self.config.model_engine_config.temperature,
                         max_tokens=self.config.max_tokens,
                     )
-                    state.metadata.grammar_compilation_end_time = time()
-                    state.metadata.compile_status = CompileStatus(
+                    output.metadata.grammar_compilation_end_time = time()
+                    output.metadata.compile_status = CompileStatus(
                         code=CompileStatusCode.OK
                     )
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
-                state.metadata.compile_status = CompileStatus(
+                output.metadata.compile_status = CompileStatus(
                     code=CompileStatusCode.COMPILE_TIMEOUT,
                     message="Schema compilation timed out",
                 )
                 return
 
         except Exception as e:
-            state.metadata.compile_status = CompileStatus(
+            output.metadata.compile_status = CompileStatus(
                 code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
             )
             return
@@ -77,25 +80,27 @@ class GuidanceEngine(Engine[GuidanceConfig]):
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     state_iterator = (
-                        self.guidance_model_state.stream() + state.input + generation_op
+                        self.guidance_model_state.stream()
+                        + output.input
+                        + generation_op
                     )
                     for i, guidance_state in enumerate(state_iterator):
                         if i == 0:
-                            state.metadata.first_token_arrival_time = time()
+                            output.metadata.first_token_arrival_time = time()
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
-                state.metadata.decoding_status = DecodingStatus(
+                output.metadata.decoding_status = DecodingStatus(
                     code=DecodingStatusCode.DECODING_TIMEOUT,
                     message="Generation timed out",
                 )
 
                 # unset the first token arrival time avoid false performance metrics
-                state.metadata.first_token_arrival_time = None
+                output.metadata.first_token_arrival_time = None
                 self.guidance_model_state.engine.model_obj.reset()
                 return
 
         except Exception as e:
-            state.metadata.decoding_status = DecodingStatus(
+            output.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
             self.guidance_model_state.engine.model_obj.reset()
@@ -103,16 +108,16 @@ class GuidanceEngine(Engine[GuidanceConfig]):
 
         try:
             generation = guidance_state["generated_object"]
-            state.metadata.decoding_status = DecodingStatus(code=DecodingStatusCode.OK)
+            output.metadata.decoding_status = DecodingStatus(code=DecodingStatusCode.OK)
         except KeyError:
-            state.metadata.decoding_status = DecodingStatus(
+            output.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR,
                 message="Failed to extract generated object",
             )
             generation = ""
 
-        state.output = generation
-        state.token_usage.output_tokens = self.count_tokens(generation)
+        output.output = generation
+        output.token_usage.output_tokens = self.count_tokens(generation)
 
         self.guidance_model_state.engine.model_obj.reset()
         return
@@ -136,4 +141,4 @@ class GuidanceEngine(Engine[GuidanceConfig]):
         return self.model.n_ctx()
 
 
-register_engine("guidance", GuidanceEngine, GuidanceConfig)
+register_engine(GuidanceEngine, GuidanceConfig)

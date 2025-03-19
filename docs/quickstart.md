@@ -5,21 +5,21 @@
 You can run the benchmark using the command-line interface:
 
 ```bash
-python3 -m run --engine <engine> --tasks <tasks> --limit <limit> --save_states
+python3 -m run --engine <engine> --tasks <tasks> --limit <limit> --save_outputs
 ```
 
 ### Parameters:
 - `engine`: The engine implementation to benchmark
 - `tasks`: The tasks to run
 - `limit`: Maximum number of samples to run on each task
-- `save_states`: Save execution states for later analysis
+- `save_outputs`: Save execution outputs for later analysis
 
 ## Analyzing Results
 
-If you have saved states, you can generate a report:
+If you have saved outputs, you can generate a report:
 
 ```bash
-python3 -m analyze --states <states_path>
+python3 -m analyze --outputs <outputs_path>
 ```
 
 ## Using the Python API
@@ -34,7 +34,7 @@ from core.engine import Engine
 engine = Engine(config=config)
 
 # Run benchmark
-states = bench(engine, tasks, limit=limit, save_states=True)
+outputs = bench(engine, tasks, limit=limit, save_outputs=True)
 ```
 
 For instructions on creating your custom engine, see the [Custom Engine Tutorial](/docs/custom_engine.md).

@@ -125,8 +125,8 @@ class PerfMetrics:
 
 
 @dataclass
-class GenerationState:
-    """State of a generation run."""
+class GenerationOutput:
+    """Output of a generation run."""
 
     task: str
     input: str

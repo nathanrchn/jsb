@@ -14,7 +14,7 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str, default=None)
     parser.add_argument("--tasks", type=str, required=True)
     parser.add_argument("--limit", type=int, required=False)
-    parser.add_argument("--save_states", action="store_true")
+    parser.add_argument("--save_outputs", action="store_true")
     args = parser.parse_args()
 
     tasks = args.tasks.split(",")
@@ -35,6 +35,6 @@ if __name__ == "__main__":
         engine=engine,
         tasks=tasks,
         limit=args.limit,
-        save_states=args.save_states,
+        save_outputs=args.save_outputs,
         close_engine=True,
     )

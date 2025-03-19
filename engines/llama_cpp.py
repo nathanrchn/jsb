@@ -12,7 +12,7 @@ from core.types import (
     Token,
     CompileStatus,
     DecodingStatus,
-    GenerationState,
+    GenerationOutput,
     CompileStatusCode,
     DecodingStatusCode,
 )
@@ -33,6 +33,8 @@ class LlamaCppConfig(EngineConfig):
 
 
 class LlamaCppEngine(Engine[LlamaCppConfig]):
+    name = "llama_cpp"
+
     def __init__(self, config: LlamaCppConfig):
         super().__init__(config)
 
@@ -46,7 +48,7 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
             n_gpu_layers=self.config.n_gpu_layers,
         )
 
-    def _generate(self, state: GenerationState) -> None:
+    def _generate(self, output: GenerationOutput) -> None:
         from llama_cpp.llama_grammar import LlamaGrammar
 
         grammar = None
@@ -54,15 +56,15 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
             with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     grammar = LlamaGrammar.from_json_schema(
-                        dumps(state.schema), verbose=False
+                        dumps(output.schema), verbose=False
                     )
-                    state.metadata.grammar_compilation_end_time = time.time()
-                    state.metadata.compile_status = CompileStatus(
+                    output.metadata.grammar_compilation_end_time = time.time()
+                    output.metadata.compile_status = CompileStatus(
                         code=CompileStatusCode.OK
                     )
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
-                state.metadata.compile_status = CompileStatus(
+                output.metadata.compile_status = CompileStatus(
                     code=CompileStatusCode.COMPILE_TIMEOUT,
                     message="Grammar compilation timed out",
                 )
@@ -70,14 +72,14 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
 
             segfault_check = self._check_grammar_safety(grammar)
             if not segfault_check["success"]:
-                state.metadata.compile_status = CompileStatus(
+                output.metadata.compile_status = CompileStatus(
                     code=CompileStatusCode.UNSUPPORTED_SCHEMA,
                     message=f"Failed to add grammar to sampler: {segfault_check}",
                 )
                 return
 
         except Exception as e:
-            state.metadata.compile_status = CompileStatus(
+            output.metadata.compile_status = CompileStatus(
                 code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
             )
             return
@@ -86,7 +88,7 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     generator = self.model.create_chat_completion(
-                        messages=[{"role": "user", "content": state.input}],
+                        messages=[{"role": "user", "content": output.input}],
                         stream=True,
                         grammar=grammar,
                         temperature=self.config.temperature,
@@ -96,7 +98,7 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
                     tokens_str = []
                     for i, chunk in enumerate(generator):
                         if i == 0:
-                            state.metadata.first_token_arrival_time = time.time()
+                            output.metadata.first_token_arrival_time = time.time()
 
                         if (
                             len(chunk["choices"]) == 0
@@ -108,18 +110,18 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
                         if chunk_content:
                             tokens_str.append(chunk_content)
 
-                    state.metadata.decoding_status = DecodingStatus(
+                    output.metadata.decoding_status = DecodingStatus(
                         code=DecodingStatusCode.OK
                     )
 
             if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
-                state.metadata.decoding_status = DecodingStatus(
+                output.metadata.decoding_status = DecodingStatus(
                     code=DecodingStatusCode.DECODING_TIMEOUT,
                     message="Generation timed out",
                 )
 
         except Exception as e:
-            state.metadata.decoding_status = DecodingStatus(
+            output.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
 
@@ -128,9 +130,9 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
 
         generation = "".join(tokens_str)
 
-        state.output = generation
-        state.token_usage.output_tokens = self.count_tokens(generation)
-        state.generated_tokens = [
+        output.output = generation
+        output.token_usage.output_tokens = self.count_tokens(generation)
+        output.generated_tokens = [
             Token(id=self.convert_token_to_id(token), text=token)
             for token in tokens_str
         ]
@@ -178,4 +180,4 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
         self.model.close()
 
 
-register_engine("llama_cpp", LlamaCppEngine, LlamaCppConfig)
+register_engine(LlamaCppEngine, LlamaCppConfig)

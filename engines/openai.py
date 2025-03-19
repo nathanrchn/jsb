@@ -10,7 +10,7 @@ from core.types import (
     Token,
     CompileStatus,
     DecodingStatus,
-    GenerationState,
+    GenerationOutput,
     CompileStatusCode,
     DecodingStatusCode,
 )
@@ -24,6 +24,8 @@ class OpenAIConfig(EngineConfig):
 
 
 class OpenAIEngine(Engine[OpenAIConfig]):
+    name = "openai"
+
     def __init__(
         self,
         config: OpenAIConfig,
@@ -43,14 +45,14 @@ class OpenAIEngine(Engine[OpenAIConfig]):
             encoding_for_model(self.config.model) if base_url is None else None
         )
 
-    def _generate(self, state: GenerationState) -> None:
+    def _generate(self, output: GenerationOutput) -> None:
         try:
             response = self.client.chat.completions.create(
                 model=self.config.model,
-                messages=[{"role": "user", "content": state.input}],
+                messages=[{"role": "user", "content": output.input}],
                 response_format={
                     "type": "json_schema",
-                    "json_schema": {"schema": state.schema, "name": "json_schema"},
+                    "json_schema": {"schema": output.schema, "name": "json_schema"},
                 },
                 stream=True,
                 temperature=self.config.temperature,
@@ -58,7 +60,7 @@ class OpenAIEngine(Engine[OpenAIConfig]):
                 stream_options={"include_usage": True},
             )
         except Exception as e:
-            state.metadata.compile_status = CompileStatus(
+            output.metadata.compile_status = CompileStatus(
                 code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
             )
             return
@@ -77,13 +79,13 @@ class OpenAIEngine(Engine[OpenAIConfig]):
 
             tokens_str.append(chunk_content)
 
-        state.token_usage.output_tokens = chunk.usage.completion_tokens
-        state.metadata.first_token_arrival_time = first_token_arrival_time
-        state.metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
-        state.metadata.decoding_status = DecodingStatus(code=DecodingStatusCode.OK)
+        output.token_usage.output_tokens = chunk.usage.completion_tokens
+        output.metadata.first_token_arrival_time = first_token_arrival_time
+        output.metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
+        output.metadata.decoding_status = DecodingStatus(code=DecodingStatusCode.OK)
 
-        state.output = "".join(tokens_str)
-        state.generated_tokens = [
+        output.output = "".join(tokens_str)
+        output.generated_tokens = [
             Token(id=self.convert_token_to_id(token), text=token)
             for token in tokens_str
         ]
@@ -145,4 +147,4 @@ def set_all_properties_required(schema: object) -> object:
     return schema
 
 
-register_engine("openai", OpenAIEngine, OpenAIConfig)
+register_engine(OpenAIEngine, OpenAIConfig)
