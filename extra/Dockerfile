@@ -3,7 +3,7 @@ ARG BASE_IMAGE="ghcr.io/jkminder/dlab-runai-images/base:master"
 FROM ${BASE_IMAGE}
 
 # install conda environment
-COPY env.yaml /tmp/env.yml
+COPY extra/env.yaml /tmp/env.yml
 RUN /opt/conda/bin/mamba env create -f /tmp/env.yml -n default && \
     /opt/conda/bin/mamba clean -y --all
 RUN rm /tmp/env.yml
