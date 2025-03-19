@@ -2,13 +2,12 @@ ARG BASE_IMAGE="ghcr.io/jkminder/dlab-runai-images/base:master"
 
 FROM ${BASE_IMAGE}
 
-# install conda environment
-COPY extra/env.yaml /tmp/env.yml
 COPY requirements.txt /tmp/requirements.txt
+COPY extra/environment.yaml /tmp/environment.yml
 
-RUN /opt/conda/bin/mamba env create -f /tmp/env.yml -n default && \
+RUN /opt/conda/bin/mamba env create -f /tmp/environment.yml -n default && \
     /opt/conda/bin/mamba clean -y --all
-RUN rm /tmp/env.yml
+RUN rm /tmp/environment.yml
 
 # install requirements
 RUN . /opt/conda/etc/profile.d/conda.sh && \
@@ -29,4 +28,6 @@ RUN curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
 	&& sudo apt update \
 	&& sudo apt install ngrok
 
-RUN git clone https://github.com/nathanrchn/jsb.git && cd jsb
+COPY extra/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
