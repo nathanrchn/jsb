@@ -85,12 +85,15 @@ def bench(
         if not os.path.exists("outputs"):
             os.makedirs("outputs")
 
+        if not os.path.exists(f"outputs/{engine.name}"):
+            os.makedirs(f"outputs/{engine.name}")
+
         with open(f"outputs/{engine.name}/{id}.jsonl", "w") as f:
             for outputs in all_outputs:
                 for output in outputs:
                     f.write(f"{dumps(asdict(output))}\n")
 
-        print(f"Outputs saved to outputs/{id}.jsonl")
+        print(f"Outputs saved to outputs/{engine.name}/{id}.jsonl")
 
     if close_engine:
         engine.close()
