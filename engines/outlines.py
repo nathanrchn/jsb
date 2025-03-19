@@ -100,10 +100,10 @@ class OutlinesEngine(Engine[OutlinesConfig]):
             self.model.model.reset()
             return
 
-        output = "".join(tokens_str)
-        output.token_usage.output_tokens = self.count_tokens(output)
+        generation = "".join(tokens_str)
+        output.token_usage.output_tokens = self.count_tokens(generation)
 
-        output.output = output
+        output.output = generation
         output.generated_tokens = [
             Token(id=self.convert_token_to_id(token), text=token)
             for token in tokens_str
