@@ -4,6 +4,8 @@ FROM ${BASE_IMAGE}
 
 # install conda environment
 COPY extra/env.yaml /tmp/env.yml
+COPY requirements.txt /tmp/requirements.txt
+
 RUN /opt/conda/bin/mamba env create -f /tmp/env.yml -n default && \
     /opt/conda/bin/mamba clean -y --all
 RUN rm /tmp/env.yml
@@ -23,9 +25,6 @@ RUN curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
 	| sudo tee /etc/apt/sources.list.d/ngrok.list \
 	&& sudo apt update \
 	&& sudo apt install ngrok
-
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
 
 RUN pip install openai google-generativeai \
     git+https://github.com/guidance-ai/guidance.git@514a5eb16b9d29ad824d9357732ba66e5e767642 \
