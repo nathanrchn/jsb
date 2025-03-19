@@ -3,9 +3,11 @@ ARG BASE_IMAGE="ghcr.io/jkminder/dlab-runai-images/base:master"
 FROM ${BASE_IMAGE} AS base
 
 COPY requirements.txt /tmp/requirements.txt
+COPY extra/environment.yaml /tmp/environment.yml
 
-RUN /opt/conda/bin/mamba create -y -n default && \
-    /opt/conda/bin/mamba clean -y --all
+RUN /opt/conda/bin/mamba env create -f /tmp/environment.yml -n default && \
+    /opt/conda/bin/mamba clean -y --all && \
+    rm /tmp/environment.yml
 
 # install requirements
 RUN . /opt/conda/etc/profile.d/conda.sh && \
@@ -19,7 +21,7 @@ RUN . /opt/conda/etc/profile.d/conda.sh && \
     chmod -R 777 /opt/conda/envs/default
 
 FROM ${BASE_IMAGE}
-COPY --from=base /opt/conda /opt/conda
+COPY --from=base /opt/conda/envs/default /opt/conda/envs/default
 
 COPY extra/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
