@@ -15,6 +15,9 @@ RUN . /opt/conda/etc/profile.d/conda.sh && \
     conda activate default && \
     mamba clean -y --all && \
     pip install -r /tmp/requirements.txt --no-cache-dir &&\
+    pip install openai google-generativeai \
+    && CMAKE_ARGS="-DGGML_CUDA=on" pip install git+https://github.com/abetlen/llama-cpp-python.git \
+    && pip install git+https://github.com/dottxt-ai/outlines.git git+https://github.com/mlc-ai/xgrammar.git \
     rm /tmp/requirements.txt && \
     chmod -R 777 /opt/conda/envs/default
 
@@ -25,10 +28,5 @@ RUN curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
 	| sudo tee /etc/apt/sources.list.d/ngrok.list \
 	&& sudo apt update \
 	&& sudo apt install ngrok
-
-RUN pip install openai google-generativeai \
-    git+https://github.com/guidance-ai/guidance.git@514a5eb16b9d29ad824d9357732ba66e5e767642 \
-    && CMAKE_ARGS="-DGGML_CUDA=on" pip install git+https://github.com/abetlen/llama-cpp-python.git \
-    && pip install git+https://github.com/dottxt-ai/outlines.git git+https://github.com/mlc-ai/xgrammar.git
 
 RUN git clone https://github.com/nathanrchn/jsb.git && cd jsb
