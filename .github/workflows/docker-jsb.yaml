@@ -8,10 +8,9 @@ env:
 
 # Configures this workflow to run every time the "base" workflow was successfully completed
 on:
-  workflow_run:
-    workflows: ["base"]
-    types:
-      - completed
+  push:
+    paths:
+      - extra/Dockerfile
 
 # There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
 jobs:
