@@ -14,10 +14,10 @@ RUN rm /tmp/env.yml
 RUN . /opt/conda/etc/profile.d/conda.sh && \
     conda activate default && \
     mamba clean -y --all && \
-    pip install -r /tmp/requirements.txt --no-cache-dir &&\
-    pip install openai google-generativeai \
-    && CMAKE_ARGS="-DGGML_CUDA=on" pip install git+https://github.com/abetlen/llama-cpp-python.git \
-    && pip install git+https://github.com/dottxt-ai/outlines.git git+https://github.com/mlc-ai/xgrammar.git \
+    pip install -r /tmp/requirements.txt --no-cache-dir && \
+    pip install openai google-generativeai && \
+    CMAKE_ARGS="-DGGML_CUDA=on" pip install git+https://github.com/abetlen/llama-cpp-python.git && \
+    pip install git+https://github.com/dottxt-ai/outlines.git git+https://github.com/mlc-ai/xgrammar.git && \
     rm /tmp/requirements.txt && \
     chmod -R 777 /opt/conda/envs/default
 
