@@ -54,14 +54,14 @@ def evaluate(
     declared_coverage = 0
     empirical_coverage = 0
 
-    for output in outputs:
-        output = output.output
-        schema = output.schema
+    for generation_output in outputs:
+        output = generation_output.output
+        schema = generation_output.schema
 
         if schema is None or output is None:
             continue
 
-        if output.metadata.compile_status.code == CompileStatusCode.OK:
+        if generation_output.metadata.compile_status.code == CompileStatusCode.OK:
             declared_coverage += 1
 
         try:
@@ -75,24 +75,24 @@ def evaluate(
         empirical_coverage += 1
 
     ttft_list = [
-        output.perf_metrics.ttft
-        for output in outputs
-        if output.perf_metrics.ttft is not None
+        generation_output.perf_metrics.ttft
+        for generation_output in outputs
+        if generation_output.perf_metrics.ttft is not None
     ]
     tpot_list = [
-        output.perf_metrics.tpot
-        for output in outputs
-        if output.perf_metrics.tpot is not None
+        generation_output.perf_metrics.tpot
+        for generation_output in outputs
+        if generation_output.perf_metrics.tpot is not None
     ]
     tgt_list = [
-        output.perf_metrics.tgt
-        for output in outputs
-        if output.perf_metrics.tgt is not None
+        generation_output.perf_metrics.tgt
+        for generation_output in outputs
+        if generation_output.perf_metrics.tgt is not None
     ]
     gct_list = [
-        output.perf_metrics.gct
-        for output in outputs
-        if output.perf_metrics.gct is not None
+        generation_output.perf_metrics.gct
+        for generation_output in outputs
+        if generation_output.perf_metrics.gct is not None
     ]
 
     return (
