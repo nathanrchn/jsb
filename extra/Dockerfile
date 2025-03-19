@@ -1,6 +1,4 @@
-ARG BASE_IMAGE="ghcr.io/jkminder/dlab-runai-images/pytorch:master"
-
-FROM ${BASE_IMAGE}
+FROM ghcr.io/jkminder/dlab-runai-images/pytorch:master
 
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
