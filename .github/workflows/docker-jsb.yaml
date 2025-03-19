@@ -10,6 +10,7 @@ env:
 on:
   push:
     paths:
+      - extra/env.yaml
       - extra/Dockerfile
       - .github/workflows/docker-jsb.yaml
 
