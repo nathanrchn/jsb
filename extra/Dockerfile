@@ -1,13 +1,11 @@
 ARG BASE_IMAGE="ghcr.io/jkminder/dlab-runai-images/base:master"
 
-FROM ${BASE_IMAGE}
+FROM ${BASE_IMAGE} AS base
 
 COPY requirements.txt /tmp/requirements.txt
-COPY extra/environment.yaml /tmp/environment.yml
 
-RUN /opt/conda/bin/mamba env create -f /tmp/environment.yml -n default && \
+RUN /opt/conda/bin/mamba env create -n default && \
     /opt/conda/bin/mamba clean -y --all
-RUN rm /tmp/environment.yml
 
 # install requirements
 RUN . /opt/conda/etc/profile.d/conda.sh && \
@@ -20,13 +18,8 @@ RUN . /opt/conda/etc/profile.d/conda.sh && \
     rm /tmp/requirements.txt && \
     chmod -R 777 /opt/conda/envs/default
 
-# install ngrok
-RUN curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
-	| sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
-	&& echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
-	| sudo tee /etc/apt/sources.list.d/ngrok.list \
-	&& sudo apt update \
-	&& sudo apt install ngrok
+FROM ${BASE_IMAGE}
+COPY --from=base /opt/conda /opt/conda
 
 COPY extra/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

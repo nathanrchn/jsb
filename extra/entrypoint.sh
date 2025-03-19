@@ -5,3 +5,5 @@ if [ ! -d "/jsb" ]; then
 else
   cd /jsb && git pull
 fi
+
+conda activate default
