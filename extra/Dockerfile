@@ -4,7 +4,7 @@ FROM ${BASE_IMAGE} AS base
 
 COPY requirements.txt /tmp/requirements.txt
 
-RUN /opt/conda/bin/mamba env create -n default && \
+RUN /opt/conda/bin/mamba create -y -n default && \
     /opt/conda/bin/mamba clean -y --all
 
 # install requirements
