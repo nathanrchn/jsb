@@ -10,4 +10,5 @@ RUN pip install openai google-generativeai \
     && CMAKE_ARGS="-DGGML_CUDA=on" pip install git+https://github.com/abetlen/llama-cpp-python.git \
     && pip install git+https://github.com/dottxt-ai/outlines.git git+https://github.com/mlc-ai/xgrammar.git
 
-RUN git clone https://github.com/nathanrchn/jsb.git $HOME && cd $HOME/jsb
+RUN git clone https://github.com/nathanrchn/jsb.git \
+    && cd jsb
