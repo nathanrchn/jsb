@@ -29,6 +29,7 @@ class OutlinesConfig(EngineConfig):
     model_engine_config: LlamaCppConfig
     grammar_cache_enabled: bool = False
     max_tokens: Optional[int] = None
+    hf_tokenizer_id: Optional[str] = None
 
 
 class OutlinesEngine(Engine[OutlinesConfig]):
@@ -37,12 +38,13 @@ class OutlinesEngine(Engine[OutlinesConfig]):
     def __init__(self, config: OutlinesConfig):
         super().__init__(config)
 
-        from transformers import AutoTokenizer
         from llama_cpp.llama_tokenizer import LlamaHFTokenizer
         from outlines.models import llamacpp as outlines_llamacpp
 
-        tokenizer = LlamaHFTokenizer.from_pretrained(self.config.hf_tokenizer_id)
-        self.hf_tokenizer = AutoTokenizer.from_pretrained(self.config.hf_tokenizer_id)
+        if self.config.hf_tokenizer_id:
+            tokenizer = LlamaHFTokenizer.from_pretrained(self.config.hf_tokenizer_id)
+        else:
+            tokenizer = None
 
         self.model = outlines_llamacpp(
             repo_id=self.config.model_engine_config.model,
