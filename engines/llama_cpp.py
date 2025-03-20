@@ -28,7 +28,7 @@ class LlamaCppChatFormatter:
         self.formatter = formatter
 
     def __call__(self, messages: List[Dict[str, Any]]) -> str:
-        return self.formatter(messages=messages).prompt.decode("utf-8")
+        return self.formatter(messages=messages).prompt
 
 
 @dataclass
