@@ -1,9 +1,11 @@
 #!/bin/bash
 
-if [ ! -d "/jsb" ]; then
-  git clone https://github.com/nathanrchn/jsb.git /jsb
+. /opt/conda/etc/profile.d/conda.sh
+
+if [ ! -d "/home/jsb" ]; then
+  git clone https://github.com/nathanrchn/jsb.git /home/jsb
 else
-  cd /jsb && git pull
+  cd /home/jsb && git pull
 fi
 
 conda activate default
