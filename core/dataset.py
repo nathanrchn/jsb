@@ -1,9 +1,10 @@
 from json import loads
 from dataclasses import dataclass
 from datasets import load_dataset
-from typing import Callable, Iterator, Tuple, Optional
+from typing import Callable, Iterator, Tuple, Optional, List
 
-from core.types import Schema, FormatPrompt
+from core.types import Schema
+from core.messages import Message, MessagesFormatter
 
 DATASET_SCHEMA_COLUMN = "json_schema"
 DATASET_HUGGINGFACE_PATH = "epfl-dlab/JSONSchemaBench"
@@ -60,7 +61,9 @@ class Dataset:
     def shuffle(self) -> None:
         self.dataset = self.dataset.shuffle()
 
-    def iter(self, prompt_fn: FormatPrompt) -> Iterator[Tuple[str, Schema]]:
+    def iter(
+        self, messages_formatter: MessagesFormatter
+    ) -> Iterator[Tuple[List[Message], Schema]]:
         iterator = (
             self.dataset
             if self.config.limit is None
@@ -68,4 +71,4 @@ class Dataset:
         )
         for item in iterator:
             schema = loads(item[DATASET_SCHEMA_COLUMN])
-            yield prompt_fn(schema), schema
+            yield messages_formatter(self.config.dataset_name, schema), schema

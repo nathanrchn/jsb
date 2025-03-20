@@ -49,7 +49,7 @@ class OpenAIEngine(Engine[OpenAIConfig]):
         try:
             response = self.client.chat.completions.create(
                 model=self.config.model,
-                messages=[{"role": "user", "content": output.input}],
+                messages=output.messages,
                 response_format={
                     "type": "json_schema",
                     "json_schema": {"schema": output.schema, "name": "json_schema"},
@@ -84,7 +84,7 @@ class OpenAIEngine(Engine[OpenAIConfig]):
         output.metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
         output.metadata.decoding_status = DecodingStatus(code=DecodingStatusCode.OK)
 
-        output.output = "".join(tokens_str)
+        output.generation = "".join(tokens_str)
         output.generated_tokens = [
             Token(id=self.convert_token_to_id(token), text=token)
             for token in tokens_str

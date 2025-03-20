@@ -1,7 +1,8 @@
 from time import time
 from functools import wraps
-from typing import Callable, Dict, Any, TYPE_CHECKING
+from typing import Callable, Dict, Any, TYPE_CHECKING, List
 
+from core.messages import Message
 from core.types import PerfMetrics
 
 if TYPE_CHECKING:
@@ -9,14 +10,16 @@ if TYPE_CHECKING:
 
 
 def profile_generation(
-    generate: Callable[["Engine", str, str, Dict[str, Any]], "GenerationOutput"],
-) -> Callable[["Engine", str, str, Dict[str, Any]], "GenerationOutput"]:
+    generate: Callable[
+        ["Engine", str, List[Message], Dict[str, Any]], "GenerationOutput"
+    ],
+) -> Callable[["Engine", str, List[Message], Dict[str, Any]], "GenerationOutput"]:
     @wraps(generate)
     def wrapper(
-        engine: "Engine", task: str, prompt: str, schema: Dict[str, Any]
+        engine: "Engine", task: str, messages: List[Message], schema: Dict[str, Any]
     ) -> "GenerationOutput":
         gen_start_time: float = time()
-        output: "GenerationOutput" = generate(engine, task, prompt, schema)
+        output: "GenerationOutput" = generate(engine, task, messages, schema)
         gen_end_time: float = time()
 
         perf_metrics: PerfMetrics = PerfMetrics.from_timestamps(

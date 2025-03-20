@@ -15,7 +15,8 @@ if __name__ == "__main__":
     dacite_config = Config(check_types=False)
     with open(args.outputs, "r") as f:
         outputs = [
-            from_dict(GenerationOutput, loads(line), config=dacite_config) for line in f
+            from_dict(GenerationOutput, loads(line), config=dacite_config)
+            for line in f[1:]
         ]
 
     task_outputs: Dict[str, List[GenerationOutput]] = {}

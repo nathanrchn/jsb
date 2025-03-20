@@ -29,7 +29,7 @@ class LlamaCppConfig(EngineConfig):
     verbose: bool = True
     n_gpu_layers: int = -1
     temperature: float = 0.2
-    max_tokens: Optional[int] = None
+    llama_cpp_max_tokens: Optional[int] = None
 
 
 class LlamaCppEngine(Engine[LlamaCppConfig]):
@@ -88,11 +88,11 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     generator = self.model.create_chat_completion(
-                        messages=[{"role": "user", "content": output.input}],
+                        messages=output.messages,
                         stream=True,
                         grammar=grammar,
                         temperature=self.config.temperature,
-                        max_tokens=self.config.max_tokens,
+                        max_tokens=self.config.llama_cpp_max_tokens,
                     )
 
                     tokens_str = []
@@ -130,7 +130,7 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
 
         generation = "".join(tokens_str)
 
-        output.output = generation
+        output.generation = generation
         output.token_usage.output_tokens = self.count_tokens(generation)
         output.generated_tokens = [
             Token(id=self.convert_token_to_id(token), text=token)

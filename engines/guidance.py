@@ -20,8 +20,10 @@ from core.types import (
 
 @dataclass
 class GuidanceConfig(EngineConfig):
+    hf_tokenizer_id: str
     model_engine_config: LlamaCppConfig
     max_tokens: Optional[int] = None
+    whitespace_flexible: bool = False
 
 
 class GuidanceEngine(Engine[GuidanceConfig]):
@@ -32,6 +34,7 @@ class GuidanceEngine(Engine[GuidanceConfig]):
 
         from llama_cpp import Llama
         from guidance.models import LlamaCpp
+        from transformers import AutoTokenizer
 
         self.model = Llama.from_pretrained(
             self.config.model_engine_config.model,
@@ -41,13 +44,16 @@ class GuidanceEngine(Engine[GuidanceConfig]):
             n_gpu_layers=self.config.model_engine_config.n_gpu_layers,
         )
 
-        self.guidance_model_state = LlamaCpp(self.model, echo=False, caching=False)
+        self.guidance_model_state = LlamaCpp(self.model, echo=False, caching=True)
 
-        self.tokenizer = self.guidance_model_state.engine.tokenizer
-        self.config.max_tokens = safe_min(self.model.n_ctx(), self.config.max_tokens)
+        self.hf_tokenizer = AutoTokenizer.from_pretrained(self.config.hf_tokenizer_id)
 
     def _generate(self, output: GenerationOutput) -> None:
         from guidance import json as guidance_json
+
+        input = self.hf_tokenizer.apply_chat_template(
+            output.messages, tokenize=False, add_generation_prompt=True
+        )
 
         try:
             with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
@@ -56,7 +62,11 @@ class GuidanceEngine(Engine[GuidanceConfig]):
                         schema=output.schema,
                         name="generated_object",
                         temperature=self.config.model_engine_config.temperature,
-                        max_tokens=self.config.max_tokens,
+                        max_tokens=safe_min(
+                            self.model.n_ctx() - self.count_tokens(input),
+                            self.config.max_tokens,
+                        ),
+                        whitespace_flexible=self.config.whitespace_flexible,
                     )
                     output.metadata.grammar_compilation_end_time = time()
                     output.metadata.compile_status = CompileStatus(
@@ -80,9 +90,7 @@ class GuidanceEngine(Engine[GuidanceConfig]):
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     state_iterator = (
-                        self.guidance_model_state.stream()
-                        + output.input
-                        + generation_op
+                        self.guidance_model_state.stream() + input + generation_op
                     )
                     for i, guidance_state in enumerate(state_iterator):
                         if i == 0:
@@ -116,17 +124,17 @@ class GuidanceEngine(Engine[GuidanceConfig]):
             )
             generation = ""
 
-        output.output = generation
+        output.generation = generation
         output.token_usage.output_tokens = self.count_tokens(generation)
 
         self.guidance_model_state.engine.model_obj.reset()
         return
 
     def encode(self, text: str) -> Optional[List[int]]:
-        return self.tokenizer.encode(text.encode("utf-8"))
+        return self.hf_tokenizer.encode(text)
 
     def decode(self, ids: List[int]) -> Optional[str]:
-        return self.tokenizer.decode(ids).decode("utf-8")
+        return self.hf_tokenizer.decode(ids)
 
     def adapt_schema(self, schema: Schema) -> Schema:
         if "type" not in schema:
@@ -139,6 +147,9 @@ class GuidanceEngine(Engine[GuidanceConfig]):
     @property
     def max_context_length(self) -> int:
         return self.model.n_ctx()
+
+    def close(self):
+        self.model.close()
 
 
 register_engine(GuidanceEngine, GuidanceConfig)

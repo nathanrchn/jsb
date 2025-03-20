@@ -6,17 +6,20 @@ from dataclasses import asdict
 from typing import List, Optional, Union
 
 from core.engine import Engine
+from core.types import GenerationOutput
 from core.dataset import Dataset, DatasetConfig
 from core.evaluator import evaluate, print_scores
-from core.types import FormatPrompt, GenerationOutput
-from core.utils import DEFAULT_FORMAT_PROMPT, disable_print, nanoid, safe_min
+from core.utils import disable_print, nanoid, safe_min
+from core.messages import MessagesFormatter, DEFAULT_MESSAGES_FORMATTER
 
 
 def bench(
     engine: Engine,
     tasks: List[str],
     limit: Optional[int] = None,
-    prompt_fn: Union[FormatPrompt, List[FormatPrompt]] = DEFAULT_FORMAT_PROMPT,
+    messages_formatter: Union[
+        MessagesFormatter, List[MessagesFormatter]
+    ] = DEFAULT_MESSAGES_FORMATTER,
     close_engine: bool = True,
     save_outputs: bool = False,
 ) -> List[List[GenerationOutput]]:
@@ -28,15 +31,11 @@ def bench(
         The tasks to benchmark.
     :param limit: Optional[int]
         The limit on the number of samples to benchmark.
-    :param prompt_fn: Union[FormatPrompt, List[FormatPrompt]]
+    :param messages_formatter: Union[MessagesFormatter, List[MessagesFormatter]]
         The function(s) to format the schema into a prompt. If a single
         function is provided, it will be used for all tasks. If a list of
         functions is provided, each function will be used for the corresponding
-        task. The default format prompt is:
-            You need to generate a JSON object that matches the schema below.
-            Do not include the schema in the output and DIRECTLY return the
-            JSON object without any additional information. The schema is:
-            {dumps(schema)}
+        task.
     :param close_engine: bool
         Whether to close the engine after the benchmark.
     :param save_outputs: bool
@@ -47,22 +46,22 @@ def bench(
     """
     id = nanoid()
 
-    if not isinstance(prompt_fn, list):
-        prompt_fn = [prompt_fn] * len(tasks)
+    if not isinstance(messages_formatter, list):
+        messages_formatter = [messages_formatter] * len(tasks)
 
     all_outputs = []
-    for task, pf in zip(tasks, prompt_fn):
+    for task, mf in zip(tasks, messages_formatter):
         task_outputs = []
         dataset = Dataset(DatasetConfig(task, limit=limit))
-        for prompt, schema in tqdm(
-            dataset.iter(pf),
+        for messages, schema in tqdm(
+            dataset.iter(mf),
             total=safe_min(len(dataset), limit),
             desc=task,
             file=sys.stdout,
         ):
             with disable_print():
                 schema = engine.adapt_schema(schema)
-                result = engine.generate(task, prompt, schema)
+                result = engine.generate(task, messages, schema)
                 task_outputs.append(result)
         all_outputs.append(task_outputs)
 
@@ -89,6 +88,8 @@ def bench(
             os.makedirs(f"outputs/{engine.name}")
 
         with open(f"outputs/{engine.name}/{id}.jsonl", "w") as f:
+            f.write(f"{dumps(asdict(engine.config))}\n")
+
             for outputs in all_outputs:
                 for output in outputs:
                     f.write(f"{dumps(asdict(output))}\n")

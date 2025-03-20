@@ -25,9 +25,9 @@ if TYPE_CHECKING:
 
 @dataclass
 class OutlinesConfig(EngineConfig):
+    hf_tokenizer_id: str
     model_engine_config: LlamaCppConfig
     grammar_cache_enabled: bool = False
-    hf_tokenizer_id: Optional[str] = None
     max_tokens: Optional[int] = None
 
 
@@ -37,13 +37,12 @@ class OutlinesEngine(Engine[OutlinesConfig]):
     def __init__(self, config: OutlinesConfig):
         super().__init__(config)
 
+        from transformers import AutoTokenizer
         from llama_cpp.llama_tokenizer import LlamaHFTokenizer
         from outlines.models import llamacpp as outlines_llamacpp
 
-        if self.config.hf_tokenizer_id:
-            tokenizer = LlamaHFTokenizer.from_pretrained(self.config.hf_tokenizer_id)
-        else:
-            tokenizer = None
+        tokenizer = LlamaHFTokenizer.from_pretrained(self.config.hf_tokenizer_id)
+        self.hf_tokenizer = AutoTokenizer.from_pretrained(self.config.hf_tokenizer_id)
 
         self.model = outlines_llamacpp(
             repo_id=self.config.model_engine_config.model,
@@ -66,11 +65,15 @@ class OutlinesEngine(Engine[OutlinesConfig]):
         ):
             return
 
+        input = self.hf_tokenizer.apply_chat_template(
+            output.messages, tokenize=False, add_generation_prompt=True
+        )
+
         try:
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
                 if to_ctx_mgr.state == to_ctx_mgr.EXECUTING:
                     token_iterator = generator.stream(
-                        output.input,
+                        input,
                         temperature=self.config.model_engine_config.temperature,
                         max_tokens=self.config.max_tokens,
                         stop_at="```\n",
@@ -103,7 +106,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
         generation = "".join(tokens_str)
         output.token_usage.output_tokens = self.count_tokens(generation)
 
-        output.output = generation
+        output.generation = generation
         output.generated_tokens = [
             Token(id=self.convert_token_to_id(token), text=token)
             for token in tokens_str

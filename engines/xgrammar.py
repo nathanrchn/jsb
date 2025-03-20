@@ -121,8 +121,12 @@ class XGrammarEngine(Engine[XGrammarConfig]):
             )
             return
 
+        input = self.tokenizer.apply_chat_template(
+            output.messages, tokenize=False, add_generation_prompt=True
+        )
+
         model_input = self.tokenizer(
-            output.input,
+            input,
             return_tensors="pt",
             add_special_tokens=False,
             padding=True,
@@ -180,7 +184,7 @@ class XGrammarEngine(Engine[XGrammarConfig]):
         if timing_processor.timestamps:
             output.metadata.first_token_arrival_time = timing_processor.timestamps[0]
 
-        output.output = output_text
+        output.generation = output_text
         output.token_usage.output_tokens = self.count_tokens(output_text)
 
         return

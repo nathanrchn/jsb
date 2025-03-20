@@ -55,17 +55,17 @@ def evaluate(
     empirical_coverage = 0
 
     for generation_output in outputs:
-        output = generation_output.output
+        generation = generation_output.generation
         schema = generation_output.schema
 
-        if schema is None or output is None:
+        if schema is None or generation is None:
             continue
 
         if generation_output.metadata.compile_status.code == CompileStatusCode.OK:
             declared_coverage += 1
 
         try:
-            json_object = loads(output)
+            json_object = loads(generation)
         except Exception:
             continue
 

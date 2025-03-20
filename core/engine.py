@@ -2,12 +2,13 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import List, Optional, TypeVar, Generic
 
+from core.messages import Message
+from core.profile import profile_generation
 from core.types import (
     Schema,
     TokenUsage,
     GenerationOutput,
 )
-from core.profile import profile_generation
 
 
 @dataclass
@@ -38,7 +39,7 @@ class Engine(ABC, Generic[T]):
     def generate(
         self,
         task: str,
-        prompt: str,
+        messages: List[Message],
         schema: Schema,
     ) -> GenerationOutput:
         """Generates a JSON object that matches the schema.
@@ -48,8 +49,8 @@ class Engine(ABC, Generic[T]):
 
         :param task: str
             The task to generate the JSON object for.
-        :param prompt: str
-            The prompt to generate the JSON object for.
+        :param messages: List[Message]
+            The messages to generate the JSON object for.
         :param schema: Schema
             The schema to generate the JSON object for.
         :return: GenerationOutput
@@ -57,7 +58,9 @@ class Engine(ABC, Generic[T]):
         """
 
         schema = self.adapt_schema(schema)
-        output = GenerationOutput(task=task, input=prompt, output="", schema=schema)
+        output = GenerationOutput(
+            task=task, messages=messages, generation="", schema=schema
+        )
         output.token_usage.input_tokens = self.count_tokens(output.input)
 
         self._generate(output)

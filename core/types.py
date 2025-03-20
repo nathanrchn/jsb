@@ -1,13 +1,13 @@
 from enum import Enum
 from uuid import uuid4
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Callable, Optional
+from typing import List, Dict, Any, Optional
 
+from core.messages import Message
 from core.utils import safe_divide, safe_subtract
 
 
 Schema = Dict[str, Any]
-FormatPrompt = Callable[[Schema], str]
 
 
 class CompileStatusCode(int, Enum):
@@ -129,8 +129,8 @@ class GenerationOutput:
     """Output of a generation run."""
 
     task: str
-    input: str
-    output: str
+    messages: List[Message]
+    generation: str
     schema: Schema
     id: str = field(default_factory=lambda: str(uuid4()))
     generated_tokens: List[Token] = field(default_factory=list)
