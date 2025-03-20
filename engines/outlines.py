@@ -58,7 +58,7 @@ class OutlinesEngine(Engine[OutlinesConfig]):
             self.config.model_engine_config.n_ctx, self.config.max_tokens
         )
 
-        self.formatter = LlamaCppEngine.get_chat_formatter(self.model)
+        self.formatter = LlamaCppEngine.get_chat_formatter(self.model.model)
 
     def _generate(self, output: GenerationOutput) -> None:
         generator = self._compile_grammar(output.schema, output.metadata)
@@ -106,7 +106,6 @@ class OutlinesEngine(Engine[OutlinesConfig]):
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
 
-            self.model.model.reset()
             return
 
         generation = "".join(tokens_str)
@@ -118,7 +117,6 @@ class OutlinesEngine(Engine[OutlinesConfig]):
             for token in tokens_str
         ]
 
-        self.model.model.reset()
         return
 
     def _compile_grammar(

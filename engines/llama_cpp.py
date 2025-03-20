@@ -140,7 +140,6 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
 
-            self.model.reset()
             return
 
         generation = "".join(tokens_str)
@@ -152,7 +151,6 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
             for token in tokens_str
         ]
 
-        self.model.reset()
         return
 
     def _check_grammar_safety(self, grammar: "LlamaGrammar") -> Dict[str, Any]:

@@ -47,7 +47,6 @@ class DecodingStatus:
 class TokenUsage:
     input_tokens: int = 0
     output_tokens: int = 0
-    ff_output_tokens: int = 0
 
     def __add__(self, other: "TokenUsage") -> "TokenUsage":
         return TokenUsage(
