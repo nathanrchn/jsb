@@ -43,7 +43,7 @@ class GuidanceEngine(Engine[GuidanceConfig]):
             n_gpu_layers=self.config.model_engine_config.n_gpu_layers,
         )
 
-        self.guidance_model_state = LlamaCpp(self.model, echo=False, caching=True)
+        self.guidance_model_state = LlamaCpp(self.model, echo=False)
         self.tokenizer = self.guidance_model_state.engine.tokenizer
 
         self.formatter = LlamaCppEngine.get_chat_formatter(self.model)
@@ -104,14 +104,12 @@ class GuidanceEngine(Engine[GuidanceConfig]):
 
                 # unset the first token arrival time avoid false performance metrics
                 output.metadata.first_token_arrival_time = None
-                self.guidance_model_state.engine.model_obj.reset()
                 return
 
         except Exception as e:
             output.metadata.decoding_status = DecodingStatus(
                 code=DecodingStatusCode.UNKOWN_ERROR, message=str(e)
             )
-            self.guidance_model_state.engine.model_obj.reset()
             return
 
         try:
@@ -127,7 +125,6 @@ class GuidanceEngine(Engine[GuidanceConfig]):
         output.generation = generation
         output.token_usage.output_tokens = self.count_tokens(generation)
 
-        self.guidance_model_state.engine.model_obj.reset()
         return
 
     def encode(self, text: str) -> Optional[List[int]]:
