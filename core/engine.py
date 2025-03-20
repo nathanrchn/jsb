@@ -61,7 +61,6 @@ class Engine(ABC, Generic[T]):
         output = GenerationOutput(
             task=task, messages=messages, generation="", schema=schema
         )
-        output.token_usage.input_tokens = self.count_tokens(output.input)
 
         self._generate(output)
 

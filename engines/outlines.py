@@ -7,6 +7,7 @@ from typing import List, Optional, TYPE_CHECKING
 from core.registry import register_engine
 from engines.llama_cpp import LlamaCppConfig
 from core.engine import Engine, EngineConfig
+from engines.llama_cpp import LlamaCppEngine
 from core.utils import COMPILATION_TIMEOUT, GENERATION_TIMEOUT, safe_min
 from core.types import (
     Token,
@@ -25,7 +26,6 @@ if TYPE_CHECKING:
 
 @dataclass
 class OutlinesConfig(EngineConfig):
-    hf_tokenizer_id: str
     model_engine_config: LlamaCppConfig
     grammar_cache_enabled: bool = False
     max_tokens: Optional[int] = None
@@ -56,6 +56,8 @@ class OutlinesEngine(Engine[OutlinesConfig]):
             self.config.model_engine_config.n_ctx, self.config.max_tokens
         )
 
+        self.formatter = LlamaCppEngine.get_chat_formatter(self.model)
+
     def _generate(self, output: GenerationOutput) -> None:
         generator = self._compile_grammar(output.schema, output.metadata)
 
@@ -65,9 +67,8 @@ class OutlinesEngine(Engine[OutlinesConfig]):
         ):
             return
 
-        input = self.hf_tokenizer.apply_chat_template(
-            output.messages, tokenize=False, add_generation_prompt=True
-        )
+        input = self.formatter(messages=output.messages)
+        output.token_usage.input_tokens = self.count_tokens(input)
 
         try:
             with stopit.ThreadingTimeout(GENERATION_TIMEOUT) as to_ctx_mgr:
@@ -75,8 +76,10 @@ class OutlinesEngine(Engine[OutlinesConfig]):
                     token_iterator = generator.stream(
                         input,
                         temperature=self.config.model_engine_config.temperature,
-                        max_tokens=self.config.max_tokens,
-                        stop_at="```\n",
+                        max_tokens=safe_min(
+                            self.config.model_engine_config.n_ctx - self.count_tokens(input),
+                            self.config.max_tokens,
+                        ),
                     )
 
                     tokens_str = []

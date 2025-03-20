@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from core.registry import register_engine
 from engines.llama_cpp import LlamaCppConfig
 from core.engine import Engine, EngineConfig
+from engines.llama_cpp import LlamaCppEngine
 from core.evaluator import is_json_schema_valid
 from core.utils import COMPILATION_TIMEOUT, GENERATION_TIMEOUT, safe_min
 from core.types import (
@@ -20,7 +21,6 @@ from core.types import (
 
 @dataclass
 class GuidanceConfig(EngineConfig):
-    hf_tokenizer_id: str
     model_engine_config: LlamaCppConfig
     max_tokens: Optional[int] = None
     whitespace_flexible: bool = False
@@ -34,7 +34,6 @@ class GuidanceEngine(Engine[GuidanceConfig]):
 
         from llama_cpp import Llama
         from guidance.models import LlamaCpp
-        from transformers import AutoTokenizer
 
         self.model = Llama.from_pretrained(
             self.config.model_engine_config.model,
@@ -46,14 +45,14 @@ class GuidanceEngine(Engine[GuidanceConfig]):
 
         self.guidance_model_state = LlamaCpp(self.model, echo=False, caching=True)
 
-        self.hf_tokenizer = AutoTokenizer.from_pretrained(self.config.hf_tokenizer_id)
+        self.formatter = LlamaCppEngine.get_chat_formatter(self.model)
+
 
     def _generate(self, output: GenerationOutput) -> None:
         from guidance import json as guidance_json
 
-        input = self.hf_tokenizer.apply_chat_template(
-            output.messages, tokenize=False, add_generation_prompt=True
-        )
+        input = self.formatter(messages=output.messages)
+        output.token_usage.input_tokens = self.count_tokens(input)
 
         try:
             with stopit.ThreadingTimeout(COMPILATION_TIMEOUT) as to_ctx_mgr:
@@ -63,7 +62,7 @@ class GuidanceEngine(Engine[GuidanceConfig]):
                         name="generated_object",
                         temperature=self.config.model_engine_config.temperature,
                         max_tokens=safe_min(
-                            self.model.n_ctx() - self.count_tokens(input),
+                            self.config.model_engine_config.n_ctx - self.count_tokens(input),
                             self.config.max_tokens,
                         ),
                         whitespace_flexible=self.config.whitespace_flexible,

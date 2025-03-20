@@ -1,13 +1,14 @@
 from json import dumps
-from typing import Callable, Dict, Any, List, Tuple
+from typing import Callable, Dict, Any, List, Tuple, TYPE_CHECKING
 
-from core.types import Schema
+if TYPE_CHECKING:
+    from core.types import Schema
 
 Message = Dict[str, Any]
-MessagesFormatter = Callable[[str, Schema], List[Message]]
+MessagesFormatter = Callable[[str, "Schema"], List[Message]]
 
 
-def few_shots_messages_formatter(task: str, schema: Schema) -> List[Message]:
+def few_shots_messages_formatter(task: str, schema: "Schema") -> List[Message]:
     examples = [value for key, value in EXAMPLES_FOR_TASK.items() if task in key]
 
     messages = [
@@ -25,8 +26,8 @@ def few_shots_messages_formatter(task: str, schema: Schema) -> List[Message]:
     return messages
 
 
-EXAMPLES_FOR_TASK: Dict[List[str], List[Tuple[str, str]]] = {
-    ["Snowplow"]: [
+EXAMPLES_FOR_TASK: Dict[Tuple[str], List[Tuple[str, str]]] = {
+    ("Snowplow",): [
         (
             '{\n    "additionalProperties": false,\n    "description": "Schema for a JSON Paths file for loading Redshift from JSON or Avro, http://docs.aws.amazon.com/redshift/latest/dg/copy-parameters-data-format.html#copy-json-jsonpaths",\n    "properties": {\n        "jsonpaths": {\n            "items": {\n                "type": "string"\n            },\n            "minItems": 1,\n            "type": "array"\n        }\n    },\n    "required": [\n        "jsonpaths"\n    ],\n    "self": {\n        "format": "jsonschema",\n        "name": "jsonpaths_file",\n        "vendor": "com.amazon.aws.redshift",\n        "version": "1-0-0"\n    },\n    "type": "object"\n}',
             '{"jsonpaths": ["$.user.id", "$.user.name", "$.user.address.street"]}',
@@ -36,7 +37,7 @@ EXAMPLES_FOR_TASK: Dict[List[str], List[Tuple[str, str]]] = {
             '{"customMetricIndex": 120, "listIndex": 45, "productIndex": 10, "value": 300}',
         ),
     ],
-    ["Github_easy", "Github_hard", "Github_medium", "Github_trivial", "Github_ultra"]: [
+    ("Github_easy", "Github_hard", "Github_medium", "Github_trivial", "Github_ultra"): [
         (
             '{\n    "$schema": "http://json-schema.org/draft-04/schema#",\n    "definitions": {\n        "address1": {"type": "string"},\n        "address2": {"type": "string"},\n        "city": {"type": "string"},\n        "country": {"type": "string"},\n        "postalCode": {"type": "string"},\n        "state": {"type": "string"}\n    },\n    "description": "A simple address schema",\n    "properties": {\n        "address1": {"$ref": "#/definitions/address1"},\n        "address2": {"$ref": "#/definitions/address2"},\n        "city": {"$ref": "#/definitions/city"},\n        "country": {"$ref": "#/definitions/country"},\n        "postalCode": {"$ref": "#/definitions/postalCode"},\n        "state": {"$ref": "#/definitions/state"}\n    },\n    "type": "object"\n}',
             '{"address1": "123 Main Street", "address2": "Apt 4B", "city": "Seattle", "country": "USA", "postalCode": "98101", "state": "WA"}',
@@ -46,7 +47,7 @@ EXAMPLES_FOR_TASK: Dict[List[str], List[Tuple[str, str]]] = {
             '{\n  "changes": [\n    {\n      "selector": "app-root",\n      "type": "component",\n      "remove": false,\n      "replaceWith": "new-root"\n    },\n    {\n      "selector": "my-directive",\n      "type": "directive",\n      "remove": true,\n      "replaceWith": "new-directive"\n    }\n  ]\n}',
         ),
     ],
-    ["Glaiveai2K"]: [
+    ("Glaiveai2K",): [
         (
             '{"properties": {"username": {"description": "The user\'s username", "type": "string"}, "email": {"description": "The user\'s email address", "type": "string"}, "age": {"description": "The user\'s age", "type": "integer"}, "is_active": {"description": "Whether the user is active", "type": "boolean"}}, "required": ["username", "email"], "type": "object"}',
             '{"username": "johndoe", "email": "john@example.com", "age": 30, "is_active": true} ',
@@ -56,7 +57,7 @@ EXAMPLES_FOR_TASK: Dict[List[str], List[Tuple[str, str]]] = {
             '{"product_id": "12345", "rating": 5, "comments": "Excellent product! Highly recommend."} ',
         ),
     ],
-    ["JsonSchemaStore"]: [
+    ("JsonSchemaStore",): [
         (
             '{\n  "$id": "https://json.schemastore.org/minecraft-trim-pattern.json",\n  "$schema": "http://json-schema.org/draft-07/schema#",\n  "description": "A trim pattern for a Minecraft data pack config schema",\n  "properties": {\n    "asset_id": {\n      "type": "string"\n    },\n    "description": {\n      "properties": {\n        "color": {\n          "type": "string"\n        },\n        "translate": {\n          "type": "string"\n        }\n      },\n      "required": ["translate"],\n      "type": "object"\n    },\n    "template_item": {\n      "type": "string"\n    }\n  },\n  "required": ["asset_id", "description", "template_item"],\n  "title": "Minecraft Data Pack Trim Pattern",\n  "type": "object"\n}',
             '{\n  "asset_id": "minecraft:trim_pattern",\n  "description": {\n    "color": "#FFAA00",\n    "translate": "trim_pattern.description"\n  },\n  "template_item": "minecraft:template_item"\n}',
@@ -66,7 +67,7 @@ EXAMPLES_FOR_TASK: Dict[List[str], List[Tuple[str, str]]] = {
             '{\n  "message_id": "minecraft:damage.message",\n  "scaling": "always",\n  "exhaustion": 0.3,\n  "death_message_type": "default",\n  "effects": "hurt"\n}',
         ),
     ],
-    ["Kubernetes"]: [
+    ("Kubernetes",): [
         (
             '{\n  "description": "A topology selector requirement is a selector that matches given label. This is an alpha feature and may change in the future.",\n  "properties": {\n    "key": {\n      "description": "The label key that the selector applies to.",\n      "type": ["string", "null"]\n    },\n    "values": {\n      "description": "An array of string values. One value must match the label to be selected. Each entry in Values is ORed.",\n      "items": {\n        "type": ["string", "null"]\n      },\n      "type": ["array", "null"]\n    }\n  },\n  "required": ["key", "values"],\n  "type": "object"\n}',
             '{\n  "key": "region",\n  "values": ["us-west-1", "us-east-1"]\n}',
@@ -76,7 +77,7 @@ EXAMPLES_FOR_TASK: Dict[List[str], List[Tuple[str, str]]] = {
             '{\n  "ip": "192.168.1.1",\n  "hostnames": ["example.com", "test.com"]\n}',
         ),
     ],
-    ["WashingtonPost"]: [
+    ("WashingtonPost",): [
         (
             '{\n  "additionalProperties": false,\n  "description": "Models a auxiliary used in targeting a piece of content.",\n  "properties": {\n    "_id": {\n      "description": "The unique identifier for this auxiliary.",\n      "type": "string"\n    },\n    "name": {\n      "description": "The general name for this auxiliary.",\n      "type": "string"\n    },\n    "uid": {\n      "description": "A short identifier for this auxiliary. Usually used in cases where a long form id cannot work.",\n      "type": "string"\n    }\n  },\n  "required": ["_id", "uid"],\n  "title": "Auxiliary",\n  "type": "object"\n}',
             '{\n  "_id": "12345",\n  "uid": "aux123",\n  "name": "Sample Auxiliary"\n}',
@@ -86,7 +87,7 @@ EXAMPLES_FOR_TASK: Dict[List[str], List[Tuple[str, str]]] = {
             '{\n  "allow_comments": true,\n  "comments_period": 30,\n  "display_comments": true,\n  "moderation_required": false,\n  "additional_properties": {}\n}',
         ),
     ],
-    ["default"]: [],
+    ("default",): [],
 }
 
 FEW_SHOTS_MESSAGES_FORMATTER: MessagesFormatter = few_shots_messages_formatter
