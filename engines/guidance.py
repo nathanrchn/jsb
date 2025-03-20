@@ -44,6 +44,7 @@ class GuidanceEngine(Engine[GuidanceConfig]):
         )
 
         self.guidance_model_state = LlamaCpp(self.model, echo=False, caching=True)
+        self.tokenizer = self.guidance_model_state.engine.tokenizer
 
         self.formatter = LlamaCppEngine.get_chat_formatter(self.model)
 
@@ -130,10 +131,10 @@ class GuidanceEngine(Engine[GuidanceConfig]):
         return
 
     def encode(self, text: str) -> Optional[List[int]]:
-        return self.model.tokenizer().encode(text.encode("utf-8"))
+        return self.tokenizer.encode(text.encode("utf-8"))
 
     def decode(self, ids: List[int]) -> Optional[str]:
-        return self.model.tokenizer().decode(ids).decode("utf-8")
+        return self.tokenizer.decode(ids).decode("utf-8")
 
     def adapt_schema(self, schema: Schema) -> Schema:
         if "type" not in schema:
