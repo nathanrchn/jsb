@@ -52,7 +52,6 @@ class TokenUsage:
         return TokenUsage(
             input_tokens=self.input_tokens + other.input_tokens,
             output_tokens=self.output_tokens + other.output_tokens,
-            ff_output_tokens=self.ff_output_tokens + other.ff_output_tokens,
         )
 
     def __str__(self) -> str:
