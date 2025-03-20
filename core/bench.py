@@ -10,7 +10,7 @@ from core.types import GenerationOutput
 from core.dataset import Dataset, DatasetConfig
 from core.evaluator import evaluate, print_scores
 from core.utils import disable_print, nanoid, safe_min
-from core.messages import MessagesFormatter, DEFAULT_MESSAGES_FORMATTER
+from core.messages import MessagesFormatter, FEW_SHOTS_MESSAGES_FORMATTER
 
 
 def bench(
@@ -19,7 +19,7 @@ def bench(
     limit: Optional[int] = None,
     messages_formatter: Union[
         MessagesFormatter, List[MessagesFormatter]
-    ] = DEFAULT_MESSAGES_FORMATTER,
+    ] = FEW_SHOTS_MESSAGES_FORMATTER,
     close_engine: bool = True,
     save_outputs: bool = False,
 ) -> List[List[GenerationOutput]]:
@@ -32,7 +32,7 @@ def bench(
     :param limit: Optional[int]
         The limit on the number of samples to benchmark.
     :param messages_formatter: Union[MessagesFormatter, List[MessagesFormatter]]
-        The function(s) to format the schema into a prompt. If a single
+        The function(s) to format the schema into a list of messages. If a single
         function is provided, it will be used for all tasks. If a list of
         functions is provided, each function will be used for the corresponding
         task.

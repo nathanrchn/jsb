@@ -7,16 +7,6 @@ Message = Dict[str, Any]
 MessagesFormatter = Callable[[str, Schema], List[Message]]
 
 
-def default_messages_formatter(_: str, schema: Schema) -> List[Message]:
-    return [
-        {
-            "role": "system",
-            "content": "You need to generate a JSON object that matches the schema below.",
-        },
-        {"role": "user", "content": dumps(schema)},
-    ]
-
-
 def few_shots_messages_formatter(task: str, schema: Schema) -> List[Message]:
     examples = [value for key, value in EXAMPLES_FOR_TASK.items() if task in key]
 
@@ -99,5 +89,4 @@ EXAMPLES_FOR_TASK: Dict[List[str], List[Tuple[str, str]]] = {
     ["default"]: [],
 }
 
-DEFAULT_MESSAGES_FORMATTER: MessagesFormatter = default_messages_formatter
 FEW_SHOTS_MESSAGES_FORMATTER: MessagesFormatter = few_shots_messages_formatter
