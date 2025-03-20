@@ -1,7 +1,7 @@
 from json import loads
-from dacite import from_dict, Config
 from typing import Dict, List
 from argparse import ArgumentParser
+from dacite import from_dict, Config
 
 from core.types import GenerationOutput
 from core.evaluator import evaluate, print_scores
@@ -14,6 +14,7 @@ if __name__ == "__main__":
 
     dacite_config = Config(check_types=False)
     with open(args.outputs, "r") as f:
+        engine_config = loads(f.readline())
         outputs = [
             from_dict(GenerationOutput, loads(line), config=dacite_config)
             for line in f[1:]
@@ -37,6 +38,7 @@ if __name__ == "__main__":
         declared_coverage.append(dc)
         empirical_coverage.append(ec)
 
+    print(engine_config)
     print_scores(
         declared_coverage,
         empirical_coverage,
