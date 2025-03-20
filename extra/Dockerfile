@@ -81,9 +81,7 @@ RUN ssh-keygen -A
 EXPOSE 22
 
 # Copy configuration files
-COPY base/user-entrypoint.sh /tmp/user-entrypoint.sh
-COPY base/.bashrc /tmp/.bashrc
-RUN chmod +x /tmp/user-entrypoint.sh
+COPY extra/.bashrc /tmp/.bashrc
 
 # Install ngrok
 RUN curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
