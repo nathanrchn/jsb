@@ -23,6 +23,14 @@ if TYPE_CHECKING:
     from llama_cpp.llama_chat_format import ChatFormatter
 
 
+class LlamaCppChatFormatter:
+    def __init__(self, formatter: "ChatFormatter"):
+        self.formatter = formatter
+
+    def __call__(self, messages: List[Dict[str, Any]]) -> str:
+        return self.formatter(messages=messages).prompt.decode("utf-8")
+
+
 @dataclass
 class LlamaCppConfig(EngineConfig):
     model: str
@@ -187,7 +195,7 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
         self.model.close()
 
     @staticmethod
-    def get_chat_formatter(model: "Llama") -> "ChatFormatter":
+    def get_chat_formatter(model: "Llama") -> LlamaCppChatFormatter:
         from llama_cpp.llama_chat_format import Jinja2ChatFormatter
 
         if "tokenizer.chat_template" in model.metadata:
@@ -195,12 +203,14 @@ class LlamaCppEngine(Engine[LlamaCppConfig]):
             eos_token = model._model.token_get_text(eos_token_id)
             bos_token_id = model._model.token_bos()
             bos_token = model._model.token_get_text(bos_token_id)
-            return Jinja2ChatFormatter(
-                template=model.metadata["tokenizer.chat_template"],
-                eos_token=eos_token,
-                bos_token=bos_token,
-                add_generation_prompt=True,
-                stop_token_ids=[eos_token_id],
+            return LlamaCppChatFormatter(
+                Jinja2ChatFormatter(
+                    template=model.metadata["tokenizer.chat_template"],
+                    eos_token=eos_token,
+                    bos_token=bos_token,
+                    add_generation_prompt=True,
+                    stop_token_ids=[eos_token_id],
+                )
             )
         else:
             raise ValueError("No chat template found in model metadata")

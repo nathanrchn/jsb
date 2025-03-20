@@ -47,7 +47,6 @@ class GuidanceEngine(Engine[GuidanceConfig]):
 
         self.formatter = LlamaCppEngine.get_chat_formatter(self.model)
 
-
     def _generate(self, output: GenerationOutput) -> None:
         from guidance import json as guidance_json
 
@@ -62,7 +61,8 @@ class GuidanceEngine(Engine[GuidanceConfig]):
                         name="generated_object",
                         temperature=self.config.model_engine_config.temperature,
                         max_tokens=safe_min(
-                            self.config.model_engine_config.n_ctx - self.count_tokens(input),
+                            self.config.model_engine_config.n_ctx
+                            - self.count_tokens(input),
                             self.config.max_tokens,
                         ),
                         whitespace_flexible=self.config.whitespace_flexible,
@@ -130,10 +130,10 @@ class GuidanceEngine(Engine[GuidanceConfig]):
         return
 
     def encode(self, text: str) -> Optional[List[int]]:
-        return self.hf_tokenizer.encode(text)
+        return self.model.tokenizer().encode(text.encode("utf-8"))
 
     def decode(self, ids: List[int]) -> Optional[str]:
-        return self.hf_tokenizer.decode(ids)
+        return self.model.tokenizer().decode(ids).decode("utf-8")
 
     def adapt_schema(self, schema: Schema) -> Schema:
         if "type" not in schema:

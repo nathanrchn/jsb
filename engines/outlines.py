@@ -77,7 +77,8 @@ class OutlinesEngine(Engine[OutlinesConfig]):
                         input,
                         temperature=self.config.model_engine_config.temperature,
                         max_tokens=safe_min(
-                            self.config.model_engine_config.n_ctx - self.count_tokens(input),
+                            self.config.model_engine_config.n_ctx
+                            - self.count_tokens(input),
                             self.config.max_tokens,
                         ),
                     )
