@@ -12,15 +12,15 @@ if __name__ == "__main__":
         "--engine", type=str, required=True, choices=ENGINE_TO_CLASS.keys()
     )
     parser.add_argument("--config", type=str, default=None)
-    parser.add_argument("--tasks", type=str, required=True)
+    parser.add_argument("--tasks", type=str, required=True, choices=DATASET_NAMES, nargs="+")
     parser.add_argument("--limit", type=int, required=False)
     parser.add_argument("--save_outputs", action="store_true")
     args = parser.parse_args()
 
-    tasks = args.tasks.split(",")
+    tasks = args.tasks
     if not all(task in DATASET_NAMES for task in tasks):
         raise ValueError(
-            f"Invalid task names: {args.tasks}, available: {DATASET_NAMES}"
+            f"Invalid task names: {tasks}, available: {DATASET_NAMES}"
         )
 
     if args.config is None:
