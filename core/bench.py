@@ -6,10 +6,10 @@ from dataclasses import asdict
 from typing import List, Optional, Union
 
 from core.engine import Engine
+from core.evaluator import evaluate
 from core.types import GenerationOutput
 from core.dataset import Dataset, DatasetConfig
-from core.evaluator import evaluate, print_scores
-from core.utils import disable_print, nanoid, safe_min
+from core.utils import disable_print, nanoid, safe_min, print_scores
 from core.messages import MessagesFormatter, FEW_SHOTS_MESSAGES_FORMATTER
 
 
@@ -67,6 +67,7 @@ def bench(
 
     compliance = []
     perf_metrics = []
+    output_tokens = []
     declared_coverage = []
     empirical_coverage = []
     for outputs in all_outputs:
@@ -76,9 +77,18 @@ def bench(
         perf_metrics.append(pm)
         declared_coverage.append(dc)
         empirical_coverage.append(ec)
+        output_tokens.append(
+            sum([output.token_usage.output_tokens for output in outputs])
+        )
 
-    print_scores(declared_coverage, empirical_coverage, compliance, perf_metrics, tasks)
-    print(engine.total_usage)
+    print_scores(
+        declared_coverage,
+        empirical_coverage,
+        compliance,
+        perf_metrics,
+        tasks,
+        output_tokens,
+    )
 
     if save_outputs:
         if not os.path.exists("outputs"):
@@ -88,7 +98,9 @@ def bench(
             os.makedirs(f"outputs/{engine.name}")
 
         with open(f"outputs/{engine.name}/{id}.jsonl", "w") as f:
-            f.write(f"{dumps({"engine": engine.name, "engine_config": asdict(engine.config)})}\n")
+            f.write(
+                f"{dumps({"engine": engine.name, "engine_config": asdict(engine.config)})}\n"
+            )
 
             for outputs in all_outputs:
                 for output in outputs:
