@@ -95,7 +95,7 @@ class HuggingFaceEngine(Engine[HuggingFaceConfig]):
         if timing_processor.timestamps:
             output.metadata.first_token_arrival_time = timing_processor.timestamps[0]
 
-        output.generation = output_text
+        output.generation = extract_json_text_from_text(output_text)
         output.token_usage.output_tokens = self.count_tokens(output_text)
 
         return
@@ -108,6 +108,13 @@ def get_best_device():
         return "mps"
     else:
         return "cpu"
+    
+
+def extract_json_text_from_text(text: str) -> str:
+    if "```json" in text:
+        return text.split("```json")[1].split("```")[0].strip()
+    else:
+        return text.strip()
 
 
 register_engine(HuggingFaceEngine, HuggingFaceConfig)
