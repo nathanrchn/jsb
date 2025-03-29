@@ -132,7 +132,10 @@ def print_scores(
 
 
 def plot_perf_metrics(
-    perf_metrics: List["AggregatedPerfMetrics"], tasks: List[str], path: str, engine_name: str
+    perf_metrics: List["AggregatedPerfMetrics"],
+    tasks: List[str],
+    path: str,
+    engine_name: str,
 ) -> None:
     metric_names = ["TTFT", "TPOT", "TGT", "GCT"]
 
@@ -165,20 +168,28 @@ def plot_perf_metrics(
 
     if len(valid_tasks) == 1:
         axs = np.array([axs])
-    
+
     all_metrics_data = {
         "TTFT": [],
         "TPOT": [],
         "TGT": [],
         "GCT": [],
     }
-    
+
     for pm in valid_metrics:
-        all_metrics_data["TTFT"].extend(pm.ttft.values if pm.ttft and pm.ttft.values else [])
-        all_metrics_data["TPOT"].extend(pm.tpot.values if pm.tpot and pm.tpot.values else [])
-        all_metrics_data["TGT"].extend(pm.tgt.values if pm.tgt and pm.tgt.values else [])
-        all_metrics_data["GCT"].extend(pm.gct.values if pm.gct and pm.gct.values else [])
-    
+        all_metrics_data["TTFT"].extend(
+            pm.ttft.values if pm.ttft and pm.ttft.values else []
+        )
+        all_metrics_data["TPOT"].extend(
+            pm.tpot.values if pm.tpot and pm.tpot.values else []
+        )
+        all_metrics_data["TGT"].extend(
+            pm.tgt.values if pm.tgt and pm.tgt.values else []
+        )
+        all_metrics_data["GCT"].extend(
+            pm.gct.values if pm.gct and pm.gct.values else []
+        )
+
     bin_intervals = {}
     for metric_name in metric_names:
         if all_metrics_data[metric_name]:
@@ -224,7 +235,7 @@ def plot_perf_metrics(
                     else:
                         value = metrics_data[metric_name][0]
                         bins = np.linspace(max(0, value * 0.9), value * 1.1, 20)
-                    
+
                     axs[i, j].hist(
                         metrics_data[metric_name],
                         bins=bins,
@@ -268,8 +279,7 @@ def plot_perf_metrics(
         if bin_intervals[metric_name] is not None:
             for i in range(len(valid_tasks)):
                 axs[i, j].set_xlim(
-                    bin_intervals[metric_name][0],
-                    bin_intervals[metric_name][-1]
+                    bin_intervals[metric_name][0], bin_intervals[metric_name][-1]
                 )
 
     fig.suptitle(f"Performance Metrics for {engine_name}", fontsize=16, y=0.99)
