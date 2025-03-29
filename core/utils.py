@@ -90,8 +90,8 @@ def print_scores(
     empirical_coverage: List["Metric"],
     compliance: List["Metric"],
     perf_metrics: List["AggregatedPerfMetrics"],
+    output_tokens: List["Metric"],
     tasks: List[str],
-    output_tokens: List[int],
     details: bool = False,
 ) -> None:
     columns = [
@@ -124,7 +124,7 @@ def print_scores(
             format_metric(pm.tpot, details),
             format_metric(pm.tgt, details),
             format_metric(pm.gct, details),
-            f"{ot:,}",
+            format_metric(ot, details),
         ]
 
         table.add_row(row, divider=details)
@@ -132,7 +132,7 @@ def print_scores(
 
 
 def plot_perf_metrics(
-    perf_metrics: List["AggregatedPerfMetrics"], tasks: List[str], path: str
+    perf_metrics: List["AggregatedPerfMetrics"], tasks: List[str], path: str, engine_name: str
 ) -> None:
     metric_names = ["TTFT", "TPOT", "TGT", "GCT"]
 
@@ -160,10 +160,35 @@ def plot_perf_metrics(
         nrows=len(valid_tasks),
         ncols=len(metric_names),
         figsize=(5 * len(metric_names), 4 * len(valid_tasks)),
+        sharex="col",
     )
 
     if len(valid_tasks) == 1:
         axs = np.array([axs])
+    
+    all_metrics_data = {
+        "TTFT": [],
+        "TPOT": [],
+        "TGT": [],
+        "GCT": [],
+    }
+    
+    for pm in valid_metrics:
+        all_metrics_data["TTFT"].extend(pm.ttft.values if pm.ttft and pm.ttft.values else [])
+        all_metrics_data["TPOT"].extend(pm.tpot.values if pm.tpot and pm.tpot.values else [])
+        all_metrics_data["TGT"].extend(pm.tgt.values if pm.tgt and pm.tgt.values else [])
+        all_metrics_data["GCT"].extend(pm.gct.values if pm.gct and pm.gct.values else [])
+    
+    bin_intervals = {}
+    for metric_name in metric_names:
+        if all_metrics_data[metric_name]:
+            bin_intervals[metric_name] = np.linspace(
+                min(all_metrics_data[metric_name]),
+                max(all_metrics_data[metric_name]),
+                20,
+            )
+        else:
+            bin_intervals[metric_name] = None
 
     for j, metric_name in enumerate(metric_names):
         unit = "ms" if metric_name == "TPOT" else "seconds"
@@ -181,23 +206,32 @@ def plot_perf_metrics(
 
         for j, metric_name in enumerate(metric_names):
             if metrics_data[metric_name]:
-                if len(metrics_data[metric_name]) > 1:
-                    bin_interval = np.linspace(
-                        min(metrics_data[metric_name]),
-                        max(metrics_data[metric_name]),
-                        20,
+                if bin_intervals[metric_name] is not None:
+                    axs[i, j].hist(
+                        metrics_data[metric_name],
+                        bins=bin_intervals[metric_name],
+                        alpha=0.7,
+                        color="skyblue",
+                        edgecolor="black",
                     )
                 else:
-                    value = metrics_data[metric_name][0]
-                    bin_interval = np.linspace(max(0, value * 0.9), value * 1.1, 20)
-
-                axs[i, j].hist(
-                    metrics_data[metric_name],
-                    bins=bin_interval,
-                    alpha=0.7,
-                    color="skyblue",
-                    edgecolor="black",
-                )
+                    if len(metrics_data[metric_name]) > 1:
+                        bins = np.linspace(
+                            min(metrics_data[metric_name]),
+                            max(metrics_data[metric_name]),
+                            20,
+                        )
+                    else:
+                        value = metrics_data[metric_name][0]
+                        bins = np.linspace(max(0, value * 0.9), value * 1.1, 20)
+                    
+                    axs[i, j].hist(
+                        metrics_data[metric_name],
+                        bins=bins,
+                        alpha=0.7,
+                        color="skyblue",
+                        edgecolor="black",
+                    )
 
                 if i == len(valid_tasks) - 1:
                     axs[i, j].set_xlabel(f"Value ({unit})")
@@ -230,7 +264,15 @@ def plot_perf_metrics(
                     transform=axs[i, j].transAxes,
                 )
 
-    fig.suptitle("Performance Metrics by Task", fontsize=16, y=0.99)
+    for j, metric_name in enumerate(metric_names):
+        if bin_intervals[metric_name] is not None:
+            for i in range(len(valid_tasks)):
+                axs[i, j].set_xlim(
+                    bin_intervals[metric_name][0],
+                    bin_intervals[metric_name][-1]
+                )
+
+    fig.suptitle(f"Performance Metrics for {engine_name}", fontsize=16, y=0.99)
     plt.tight_layout()
     plt.subplots_adjust(top=0.95, wspace=0.3, hspace=0.4)
 

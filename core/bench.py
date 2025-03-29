@@ -71,23 +71,21 @@ def bench(
     declared_coverage = []
     empirical_coverage = []
     for outputs in all_outputs:
-        dc, ec, cl, pm = evaluate(outputs)
+        dc, ec, cl, pm, ot = evaluate(outputs)
 
         compliance.append(cl)
         perf_metrics.append(pm)
         declared_coverage.append(dc)
         empirical_coverage.append(ec)
-        output_tokens.append(
-            sum([output.token_usage.output_tokens for output in outputs])
-        )
+        output_tokens.append(ot)
 
     print_scores(
         declared_coverage,
         empirical_coverage,
         compliance,
         perf_metrics,
-        tasks,
         output_tokens,
+        tasks,
     )
 
     if save_outputs:

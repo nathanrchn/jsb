@@ -33,15 +33,13 @@ if __name__ == "__main__":
     declared_coverage = []
     empirical_coverage = []
     for outputs in task_outputs.values():
-        dc, ec, cl, pm = evaluate(outputs)
+        dc, ec, cl, pm, ot = evaluate(outputs)
 
         compliance.append(cl)
         perf_metrics.append(pm)
         declared_coverage.append(dc)
         empirical_coverage.append(ec)
-        output_tokens.append(
-            sum([output.token_usage.output_tokens for output in outputs])
-        )
+        output_tokens.append(ot)
 
     print(engine_config)
     print_scores(
@@ -49,8 +47,8 @@ if __name__ == "__main__":
         empirical_coverage,
         compliance,
         perf_metrics,
-        list(task_outputs.keys()),
         output_tokens,
+        list(task_outputs.keys()),
         args.details,
     )
 
@@ -59,4 +57,5 @@ if __name__ == "__main__":
             perf_metrics,
             list(task_outputs.keys()),
             f"{args.outputs.split('.')[0]}.png",
+            engine_config["engine"],
         )
