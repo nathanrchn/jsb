@@ -56,7 +56,8 @@ def validate_json_schema(instance: Schema, schema: Schema) -> bool:
 
 def evaluate(
     outputs: List[GenerationOutput],
-) -> Tuple[Metric, Metric, Metric, AggregatedPerfMetrics]:
+) -> Tuple[Metric, Metric, Metric, AggregatedPerfMetrics, Metric]:
+    output_tokens_list = []
     declared_coverage_list = []
     empirical_coverage_list = []
 
@@ -83,6 +84,7 @@ def evaluate(
             continue
 
         empirical_coverage_list.append(1)
+        output_tokens_list.append(generation_output.token_usage.output_tokens)
 
     ttft_list = [
         generation_output.perf_metrics.ttft
@@ -164,5 +166,12 @@ def evaluate(
                 max=max(gct_list),
                 std=np.std(gct_list),
             ),
+        ),
+        Metric(
+            values=output_tokens_list,
+            median=np.median(output_tokens_list),
+            min=min(output_tokens_list),
+            max=max(output_tokens_list),
+            std=np.std(output_tokens_list),
         ),
     )
