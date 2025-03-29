@@ -14,3 +14,8 @@ CMAKE_ARGS="-DGGML_CUDA=on -DLLAVA_BUILD=off" pip install llama-cpp-python==0.3.
 ```bash
 bash reproduce_paper/reproduce.sh
 ```
+
+To reproduce the no constrained LLM performance on JSONSchemaBench, We suggest usingg LM_eval 
+
+TODO
+
