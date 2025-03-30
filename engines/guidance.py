@@ -104,7 +104,7 @@ class GuidanceEngine(Engine[GuidanceConfig]):
                 )
                 return
 
-        except Exception as e:
+        except BaseException as e:
             output.metadata.compile_status = CompileStatus(
                 code=CompileStatusCode.UNSUPPORTED_SCHEMA, message=str(e)
             )
