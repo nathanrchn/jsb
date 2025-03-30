@@ -1,14 +1,14 @@
 import torch
 import stopit
 from time import time
-from typing import Optional
+from typing import List, Optional
 from dataclasses import dataclass
 from transformers.generation import LogitsProcessor
 
 from core.utils import GENERATION_TIMEOUT
 from core.registry import register_engine
 from core.engine import Engine, EngineConfig
-from core.types import GenerationOutput, DecodingStatus, DecodingStatusCode
+from core.types import CompileStatus, CompileStatusCode, GenerationOutput, DecodingStatus, DecodingStatusCode
 
 
 class TimingLogitsProcessor(LogitsProcessor):
@@ -48,6 +48,12 @@ class HuggingFaceEngine(Engine[HuggingFaceConfig]):
     def _generate(self, output: GenerationOutput) -> None:
         from transformers.generation import GenerationConfig
 
+        # strictly speaking, HuggingFace does not have a grammar compilation step
+        output.metadata.grammar_compilation_end_time = time()
+        output.metadata.compile_status = CompileStatus(
+            code=CompileStatusCode.OK
+        )
+
         timing_processor = TimingLogitsProcessor()
         generation_config = GenerationConfig(
             temperature=self.config.temperature,
@@ -78,6 +84,21 @@ class HuggingFaceEngine(Engine[HuggingFaceConfig]):
                         max_new_tokens=self.config.max_tokens,
                         logits_processor=[timing_processor],
                     )
+                    output.metadata.decoding_status = DecodingStatus(
+                        code=DecodingStatusCode.OK
+                    )
+
+            if len(timing_processor.timestamps) > 0:
+                output.metadata.first_token_arrival_time = timing_processor.timestamps[
+                    0
+                ]
+
+            if to_ctx_mgr.state == to_ctx_mgr.TIMED_OUT:
+                output.metadata.decoding_status = DecodingStatus(
+                    code=DecodingStatusCode.DECODING_TIMEOUT,
+                    message="Generation timed out",
+                )
+                return
 
         except Exception as e:
             output.metadata.decoding_status = DecodingStatus(
@@ -99,6 +120,16 @@ class HuggingFaceEngine(Engine[HuggingFaceConfig]):
         output.token_usage.output_tokens = self.count_tokens(output_text)
 
         return
+    
+    def encode(self, text: str) -> List[int]:
+        return self.tokenizer.encode(text, add_special_tokens=False)
+
+    def decode(self, ids: List[int]) -> str:
+        return self.tokenizer.decode(ids, skip_special_tokens=True)
+    
+    @property
+    def max_context_length(self) -> int:
+        return self.tokenizer.model_max_length
 
 
 def get_best_device():
