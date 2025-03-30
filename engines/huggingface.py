@@ -28,6 +28,7 @@ class HuggingFaceConfig(EngineConfig):
     model: str
     temperature: float = 0
     max_tokens: Optional[int] = 4096
+    n_ctx: int = 1_000_000_000_000 # arbitrary large number
 
 
 class HuggingFaceEngine(Engine[HuggingFaceConfig]):

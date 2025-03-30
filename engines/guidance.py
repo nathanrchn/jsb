@@ -1,10 +1,11 @@
 import stopit
 from time import time
-from typing import List, Optional
+from typing import List, Optional, Union
 from dataclasses import dataclass
 
 from core.registry import register_engine
 from engines.llama_cpp import LlamaCppConfig
+from engines.huggingface import HuggingFaceConfig, get_best_device
 from core.engine import Engine, EngineConfig
 from engines.llama_cpp import LlamaCppEngine
 from core.evaluator import is_json_schema_valid
@@ -21,7 +22,7 @@ from core.types import (
 
 @dataclass
 class GuidanceConfig(EngineConfig):
-    model_engine_config: LlamaCppConfig
+    model_engine_config: Union[LlamaCppConfig, HuggingFaceConfig]
     max_tokens: Optional[int] = None
     whitespace_flexible: bool = False
 
@@ -32,26 +33,49 @@ class GuidanceEngine(Engine[GuidanceConfig]):
     def __init__(self, config: GuidanceConfig):
         super().__init__(config)
 
-        from llama_cpp import Llama
-        from guidance.models import LlamaCpp
-
-        self.model = Llama.from_pretrained(
-            self.config.model_engine_config.model,
-            filename=self.config.model_engine_config.filename,
-            n_ctx=self.config.model_engine_config.n_ctx,
-            verbose=self.config.model_engine_config.verbose,
-            n_gpu_layers=self.config.model_engine_config.n_gpu_layers,
-        )
-
-        self.guidance_model_state = LlamaCpp(self.model, echo=False)
+        if isinstance(config.model_engine_config, LlamaCppConfig):
+            from llama_cpp import Llama
+            from guidance.models import LlamaCpp
+            self._model = Llama.from_pretrained(
+                self.config.model_engine_config.model,
+                filename=self.config.model_engine_config.filename,
+                n_ctx=self.config.model_engine_config.n_ctx,
+                verbose=self.config.model_engine_config.verbose,
+                n_gpu_layers=self.config.model_engine_config.n_gpu_layers,
+            )
+            self.guidance_model_state = LlamaCpp(self._model, echo=False)
+            self.formatter = LlamaCppEngine.get_chat_formatter(self._model)
+        elif isinstance(config.model_engine_config, HuggingFaceConfig):
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+            from guidance.models import Transformers
+            self._device = get_best_device()
+            self._model = AutoModelForCausalLM.from_pretrained(
+                self.config.model_engine_config.model,
+            ).to(self._device)
+            tokenizer = AutoTokenizer.from_pretrained(
+                self.config.model_engine_config.model,
+            )
+            self.guidance_model_state = Transformers(
+                    model=self._model,tokenizer=tokenizer
+                )
+        else:
+            raise ValueError(
+                "Invalid model engine config. Must be either LlamaCppConfig or HuggingFaceConfig."
+            )
 
         self.tokenizer = self.guidance_model_state.engine.tokenizer
-        self.formatter = LlamaCppEngine.get_chat_formatter(self.model)
+        
 
     def _generate(self, output: GenerationOutput) -> None:
         from guidance import json as guidance_json
 
-        input = self.formatter(messages=output.messages)
+        if isinstance(self.config.model_engine_config, LlamaCppConfig):
+            input = self.formatter(messages=output.messages)
+        elif isinstance(self.config.model_engine_config, HuggingFaceConfig):
+            input = self.tokenizer._orig_tokenizer.apply_chat_template(
+                output.messages, tokenize=False, add_generation_prompt=True
+            )
+
         output.token_usage.input_tokens = self.count_tokens(input)
 
         try:
@@ -143,10 +167,11 @@ class GuidanceEngine(Engine[GuidanceConfig]):
 
     @property
     def max_context_length(self) -> int:
-        return self.model.n_ctx()
+        return self.config.model_engine_config.n_ctx
 
     def close(self):
-        self.model.close()
+        if isinstance(self.config.model_engine_config, LlamaCppConfig):
+            self._model.close()
 
 
 register_engine(GuidanceEngine, GuidanceConfig)
