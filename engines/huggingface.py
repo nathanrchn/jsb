@@ -8,7 +8,13 @@ from transformers.generation import LogitsProcessor
 from core.utils import GENERATION_TIMEOUT
 from core.registry import register_engine
 from core.engine import Engine, EngineConfig
-from core.types import CompileStatus, CompileStatusCode, GenerationOutput, DecodingStatus, DecodingStatusCode
+from core.types import (
+    CompileStatus,
+    CompileStatusCode,
+    GenerationOutput,
+    DecodingStatus,
+    DecodingStatusCode,
+)
 
 
 class TimingLogitsProcessor(LogitsProcessor):
@@ -50,9 +56,7 @@ class HuggingFaceEngine(Engine[HuggingFaceConfig]):
 
         # strictly speaking, HuggingFace does not have a grammar compilation step
         output.metadata.grammar_compilation_end_time = time()
-        output.metadata.compile_status = CompileStatus(
-            code=CompileStatusCode.OK
-        )
+        output.metadata.compile_status = CompileStatus(code=CompileStatusCode.OK)
 
         timing_processor = TimingLogitsProcessor()
         generation_config = GenerationConfig(
@@ -120,13 +124,13 @@ class HuggingFaceEngine(Engine[HuggingFaceConfig]):
         output.token_usage.output_tokens = self.count_tokens(output_text)
 
         return
-    
+
     def encode(self, text: str) -> List[int]:
         return self.tokenizer.encode(text, add_special_tokens=False)
 
     def decode(self, ids: List[int]) -> str:
         return self.tokenizer.decode(ids, skip_special_tokens=True)
-    
+
     @property
     def max_context_length(self) -> int:
         return self.tokenizer.model_max_length
@@ -139,7 +143,7 @@ def get_best_device():
         return "mps"
     else:
         return "cpu"
-    
+
 
 def extract_json_text_from_text(text: str) -> str:
     if "```json" in text:
